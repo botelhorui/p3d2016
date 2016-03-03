@@ -31,8 +31,10 @@
   <ItemGroup>
     <None Include="shaders\lamp.frag" />
     <None Include="shaders\lamp.vs" />
-    <None Include="shaders\lighting.frag" />
-    <None Include="shaders\lighting.vs" />
+    <None Include="shaders\nanosuit.frag" />
+    <None Include="shaders\nanosuit.vs">
+      <FileType>CppCode</FileType>
+    </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8D235F0C-A3BF-4D5B-ADBE-68B3476487CB}</ProjectGuid>

@@ -85,17 +85,47 @@ int main()
 
 	// Build and compile our shader program
 	// TODO file existance is not verified
-	Shader lightingShader("shaders/lighting.vs", "shaders/lighting.frag");
+	Shader nanosuitShader("shaders/nanosuit.vs", "shaders/nanosuit.frag");
 	Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
-	if (!lightingShader.ok || !lampShader.ok) {
+	if (!nanosuitShader.ok || !lampShader.ok) {
 		int c;
 		glfwTerminate();
 		std::cin >> c;		
 	}
 
-	Model ourModel("C:/workplace/p3d2016/Project1/Project1/resources/models/nanosuit/nanosuit.obj");
-
 	
+	Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
+	Model cubeModel("resources/models/cube.obj");
+	// TODO import other formats
+
+	// Draw in wireframe
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	// Point light positions
+	glm::vec3 pointLightPositions[] = {
+		glm::vec3(2.3f, -1.6f, -3.0f),
+		glm::vec3(-1.7f, 0.9f, 1.0f)
+	};
+	
+	nanosuitShader.Use();
+	
+	// Set the lighting uniforms
+	// Point light 1
+	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].position"), pointLightPositions[0].x, pointLightPositions[0].y, pointLightPositions[0].z);
+	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].ambient"), 0.05f, 0.05f, 0.05f);
+	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].diffuse"), 1.0f, 1.0f, 1.0f);
+	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].specular"), 1.0f, 1.0f, 1.0f);
+	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].constant"), 1.0f);
+	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].linear"), 0.009);
+	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].quadratic"), 0.0032);
+	// Point light 2
+	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].position"), pointLightPositions[1].x, pointLightPositions[1].y, pointLightPositions[1].z);
+	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].ambient"), 0.05f, 0.05f, 0.05f);
+	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].diffuse"), 1.0f, 1.0f, 1.0f);
+	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].specular"), 1.0f, 1.0f, 1.0f);
+	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].constant"), 1.0f);
+	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].linear"), 0.009);
+	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].quadratic"), 0.0032);
 	
 	// Game loop
 	while (!glfwWindowShouldClose(window))
@@ -108,6 +138,7 @@ int main()
 		// Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
 		glfwPollEvents();
 		do_movement();
+
 		// Render
 		// Clear the colorbuffer
 		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
@@ -123,13 +154,17 @@ int main()
 		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
 
 		// Activate shader
-		lightingShader.Use();	
-		glUniformMatrix4fv(glGetUniformLocation(lightingShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(glGetUniformLocation(lightingShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(glGetUniformLocation(lightingShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		nanosuitShader.Use();	
+		glUniformMatrix4fv(glGetUniformLocation(nanosuitShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(glGetUniformLocation(nanosuitShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(glGetUniformLocation(nanosuitShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
+		glUniform3f(glGetUniformLocation(nanosuitShader.Program, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+		
+		pointLightPositions[1].x = -1.7f + 2*sin(glfwGetTime());
+		glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].position"), pointLightPositions[1].x, pointLightPositions[1].y, pointLightPositions[1].z);
 		// Render
-		ourModel.Draw(lightingShader);
+		nanosuitModel.Draw(nanosuitShader);
 
 		// Swap the screen buffers
 		glfwSwapBuffers(window);
