@@ -29,5 +29,25 @@
     <ClInclude Include="src\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\lamp.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\lamp.vs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\lighting.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\lighting.vs">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
