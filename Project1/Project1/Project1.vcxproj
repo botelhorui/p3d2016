@@ -33,7 +33,7 @@
     <None Include="shaders\lamp.vs" />
     <None Include="shaders\nanosuit.frag" />
     <None Include="shaders\nanosuit.vs">
-      <FileType>CppCode</FileType>
+      <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">

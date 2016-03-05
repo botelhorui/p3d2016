@@ -49,6 +49,8 @@ GLfloat lastFrame = 0.0f;  	// Time of last frame
 // Light
 glm::vec3 lightPos(1.2f, 1.0f, -2.0f);
 
+bool bumpMapActive = false;
+
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
@@ -80,53 +82,33 @@ int main()
 	// Define the viewport dimensions
 	glViewport(0, 0, WIDTH, HEIGHT);
 
-	//
-	glEnable(GL_DEPTH_TEST);
-
+	
 	// Build and compile our shader program
 	// TODO file existance is not verified
 	Shader nanosuitShader("shaders/nanosuit.vs", "shaders/nanosuit.frag");
-	Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
-	if (!nanosuitShader.ok || !lampShader.ok) {
-		int c;
-		glfwTerminate();
-		std::cin >> c;		
-	}
+	Shader simpleShader("shaders/simple.vs", "shaders/simple.frag");
+	Shader normalShader("shaders/normal.vs", "shaders/normal.frag");
+	/Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
+
 
 	
-	Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
-	Model cubeModel("resources/models/cube.obj");
+	//Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
+	Model lampModel("resources/models/cube/cube.obj");
+	Model cubeModel("resources/models/cube/cube.obj");
+	//Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
+	Model currentModel = cubeModel;
 	// TODO import other formats
 
 	// Draw in wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// Point light positions
-	glm::vec3 pointLightPositions[] = {
-		glm::vec3(2.3f, -1.6f, -3.0f),
-		glm::vec3(-1.7f, 0.9f, 1.0f)
-	};
 	
-	nanosuitShader.Use();
-	
-	// Set the lighting uniforms
-	// Point light 1
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].position"), pointLightPositions[0].x, pointLightPositions[0].y, pointLightPositions[0].z);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].ambient"), 0.05f, 0.05f, 0.05f);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].diffuse"), 1.0f, 1.0f, 1.0f);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].specular"), 1.0f, 1.0f, 1.0f);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].constant"), 1.0f);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].linear"), 0.009);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].quadratic"), 0.0032);
-	// Point light 2
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].position"), pointLightPositions[1].x, pointLightPositions[1].y, pointLightPositions[1].z);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].ambient"), 0.05f, 0.05f, 0.05f);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].diffuse"), 1.0f, 1.0f, 1.0f);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].specular"), 1.0f, 1.0f, 1.0f);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].constant"), 1.0f);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].linear"), 0.009);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].quadratic"), 0.0032);
-	
+	glm::vec3 pointLight(-1.7f, 0.0f, 3.0f);
+
+	//
+	glEnable(GL_DEPTH_TEST);
+
 	// Game loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -150,21 +132,28 @@ int main()
 		glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 		// set model matrix
 		glm::mat4 model;
-		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
+		// nanosuit config
+		
+		/*
+			model = glm::rotate(model, 45.0f, glm::vec3(0, 1, 0));
+			model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+			model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
+		*/
+
+		Shader shader = simpleShader;
+		if (bumpMapActive) {
+			shader = normalShader;
+		}
 
 		// Activate shader
-		nanosuitShader.Use();	
-		glUniformMatrix4fv(glGetUniformLocation(nanosuitShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(glGetUniformLocation(nanosuitShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(glGetUniformLocation(nanosuitShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-
-		glUniform3f(glGetUniformLocation(nanosuitShader.Program, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
-		
-		pointLightPositions[1].x = -1.7f + 2*sin(glfwGetTime());
-		glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].position"), pointLightPositions[1].x, pointLightPositions[1].y, pointLightPositions[1].z);
-		// Render
-		nanosuitModel.Draw(nanosuitShader);
+		shader.Use();
+		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3f(glGetUniformLocation(shader.Program, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+		pointLight.x = -1.7f + 2*sin(glfwGetTime());		
+		glUniform3f(glGetUniformLocation(shader.Program, "lightPos"), pointLight.x, pointLight.y, pointLight.z);
+		currentModel.Draw(shader);
 
 		// Swap the screen buffers
 		glfwSwapBuffers(window);
@@ -180,8 +169,11 @@ int main()
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
+	}if (key == GLFW_KEY_N && action == GLFW_PRESS) {
+		bumpMapActive = !bumpMapActive;
+	}
 	if (key >= 0 && key < 1024)
 	{
 		if (action == GLFW_PRESS)
