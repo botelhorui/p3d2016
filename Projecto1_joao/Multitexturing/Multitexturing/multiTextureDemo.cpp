@@ -41,9 +41,10 @@ unsigned int FrameCount = 0;
 
 
 VSShaderLib shader;
+VSShaderLib shaderSkybox;
 
-struct MyMesh mesh[6];
-int objId=0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
+struct MyMesh mesh[2];
+int objId = 0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
 
 
 //External array storage defined in AVTmathLib.cpp
@@ -63,7 +64,6 @@ GLint normal_uniformId;
 GLint lPos_uniformId;
 GLint tex_loc, tex_loc1;
 GLint tex_loc2; // cube map
-GLint texMode_uniformId;
 
 // Skybox
 GLint sky_tex_loc; // cube map
@@ -83,7 +83,7 @@ int startX, startY, tracking = 0;
 
 // Camera Spherical Coordinates
 float alpha = 39.0f, beta = 51.0f;
-float r = 4.0f;
+float r = 5.0f;
 
 // Frame counting and FPS computation
 long myTime,timebase = 0,frame = 0;
@@ -144,13 +144,17 @@ void renderScene(void) {
 	GLint loc;
 
 	FrameCount++;
+	glClearColor(0.2f, 0.5f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glEnable(GL_TEXTURE_CUBE_MAP);
 	// load identity matrices
 	loadIdentity(VIEW);
 	loadIdentity(MODEL);
 	// set the camera using a function similar to gluLookAt
 	lookAt(camX, camY, camZ, 0, 0, 0, 0, 1, 0);
-	// use our shader
+
+/**/
+	// Model rendering
 	glUseProgram(shader.getProgramIndex());
 
 	//send the light position in eye coordinates
@@ -162,11 +166,9 @@ void renderScene(void) {
 	glUniform4fv(lPos_uniformId, 1, res);
 
 	//Associar os Texture Units aos Objects Texture
-	//stone.tga loaded in TU0; checker.tga loaded in TU1;  lightwood.tga loaded in TU2
-
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
-
+/** /
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
 
@@ -177,6 +179,12 @@ void renderScene(void) {
 	glUniform1i(tex_loc, 0);
 	glUniform1i(tex_loc1, 1);
 	glUniform1i(tex_loc2, 2);
+/**/
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureCubeMap);
+
+	glUniform1i(tex_loc, 0);
+	glUniform1i(tex_loc2, 1);
 
 	objId = 0;
 
@@ -192,45 +200,63 @@ void renderScene(void) {
 	pushMatrix(MODEL);
 
 	switch (rotateObject) {
-	case 1:
-		rotateAngleX += 0.05f;
-		//rotate(MODEL, rotateAngleX, 1.0f, 0.0f, 0.0f);
-		break;
-	case 2:
-		rotateAngleY += 0.05f;
-		//rotate(MODEL, rotateAngleY, 0.0f, 1.0f, 0.0f);
-		break;
-	case 3:
-		rotateAngleZ += 0.05f;
-		//rotate(MODEL, rotateAngleZ, 0.0f, 0.0f, 1.0f);
-		break;
-	default:
-		break;
+		case 1:
+			rotateAngleX += 0.05f;
+			//rotate(MODEL, rotateAngleX, 1.0f, 0.0f, 0.0f);
+			break;
+		case 2:
+			rotateAngleY += 0.05f;
+			//rotate(MODEL, rotateAngleY, 0.0f, 1.0f, 0.0f);
+			break;
+		case 3:
+			rotateAngleZ += 0.05f;
+			//rotate(MODEL, rotateAngleZ, 0.0f, 0.0f, 1.0f);
+			break;
+		default:
+			break;
 	}
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
 	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
 	glUniformMatrix4fv(v_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
-	glUniformMatrix4fv(p_uniformId, 1, GL_FALSE, mMatrix[PROJECTION]);
 	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
 	computeNormalMatrix3x3();
 	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
 
 	// Render mesh
-	//glUniform1i(texMode_uniformId, 0); // modulate Phong color with texel color
-	//glUniform1i(texMode_uniformId, 1); // modulate Phong color with texel color
-
 	glBindVertexArray(mesh[objId].vao);
 	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 
 	popMatrix(MODEL);
-	objId = (objId + 1) % 6;
-	//	}
-	//}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+/**/
+	// Skybox rendering
+	glDepthFunc(GL_LEQUAL);
+	glUseProgram(shaderSkybox.getProgramIndex());
+
+	objId = 1;
+
+	glActiveTexture(GL_TEXTURE0);
+	glUniform1i(sky_tex_loc, 0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureCubeMap);
+
+	glUniformMatrix4fv(sky_p_uniformId, 1, GL_FALSE, mMatrix[PROJECTION]);
+	glUniformMatrix4fv(sky_v_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
+
+	glBindVertexArray(mesh[objId].vao);
+	//glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glDrawArrays(mesh[objId].type, 0, mesh[objId].numIndexes);
+	glBindVertexArray(0);
+	glDepthFunc(GL_LESS);
+	// Skybox rendering
+/**/
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	glutSwapBuffers();
 }
 
@@ -445,43 +471,41 @@ GLuint setupShaders() {
 
 	glLinkProgram(shader.getProgramIndex());
 
-	texMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "texMode"); // different modes of texturing
 	pvm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_pvm");
 	vm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_viewModel");
 	v_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_view");
 	normal_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_normal");
 	lPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "l_pos");
-	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
+	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texMap");
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texNormal");
 	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texCubeMap");
 
-	printf("InfoLog for Hello World Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
-	
+	//printf("\n\nInfoLog for Model Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
+	printf("\n\nInfoLog for World Shader\n%s", shader.getAllInfoLogs().c_str());
+
 	return(shader.isProgramValid());
 }
 
 GLuint setupSkyboxShaders() {
 	// Shader for models
-	shader.init();
-	//shader.loadShader(VSShaderLib::VERTEX_SHADER, "shaders/texture_demo.vert");
-	//shader.loadShader(VSShaderLib::FRAGMENT_SHADER, "shaders/texture_demo.frag");
-	shader.loadShader(VSShaderLib::VERTEX_SHADER, "shaders/shader_skybox.vert");
-	shader.loadShader(VSShaderLib::FRAGMENT_SHADER, "shaders/shader_skybox.frag");
+	shaderSkybox.init();
+	shaderSkybox.loadShader(VSShaderLib::VERTEX_SHADER, "shaders/shader_skybox.vert");
+	shaderSkybox.loadShader(VSShaderLib::FRAGMENT_SHADER, "shaders/shader_skybox.frag");
 
 	// set semantics for the shader variables
-	glBindFragDataLocation(shader.getProgramIndex(), 0, "colorOut");
-	glBindAttribLocation(shader.getProgramIndex(), VERTEX_COORD_ATTRIB, "position");
-	glBindAttribLocation(shader.getProgramIndex(), TEXTURE_COORD_ATTRIB, "texCoords");
+	glBindFragDataLocation(shaderSkybox.getProgramIndex(), 0, "colorOut");
+	glBindAttribLocation(shaderSkybox.getProgramIndex(), VERTEX_COORD_ATTRIB, "position");
 
-	glLinkProgram(shader.getProgramIndex());
+	glLinkProgram(shaderSkybox.getProgramIndex());
 
-	sky_v_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_view");
-	sky_p_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_projection");
-	sky_tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texCubeMap");
+	sky_v_uniformId = glGetUniformLocation(shaderSkybox.getProgramIndex(), "m_view");
+	sky_p_uniformId = glGetUniformLocation(shaderSkybox.getProgramIndex(), "m_projection");
+	sky_tex_loc = glGetUniformLocation(shaderSkybox.getProgramIndex(), "texCubeMap");
 
-	printf("InfoLog for Hello World Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
+	//printf("InfoLog for Skybox Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
+	printf("InfoLog for Skybox Shader\n%s", shaderSkybox.getAllInfoLogs().c_str());
 
-	return(shader.isProgramValid());
+	return(shaderSkybox.isProgramValid());
 }
 // ------------------------------------------------------------
 //
@@ -495,11 +519,12 @@ void init(){
 	camY = r *   						     sin(beta * 3.14f / 180.0f);
 
 	//Texture Object definition
-	
+/**/	
 	glGenTextures(2, TextureArray);
 	TGA_Texture(TextureArray, "stone.tga", 0);
 	TGA_Texture(TextureArray, "normal.tga", 1);
-
+/**/
+	//glEnable(GL_TEXTURE_CUBE_MAP);
 	glGenTextures(1, &textureCubeMap);
 	TGA_Texture_CubeMap(textureCubeMap);
 
@@ -524,11 +549,13 @@ void init(){
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 
+	objId = 1;
+	createSkybox();
+
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
-	//glEnable(GL_TEXTURE_CUBE_MAP);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 }
@@ -579,14 +606,18 @@ int main(int argc, char **argv) {
 	printf ("Renderer: %s\n", glGetString (GL_RENDERER));
 	printf ("Version: %s\n", glGetString (GL_VERSION));
 	printf ("GLSL: %s\n", glGetString (GL_SHADING_LANGUAGE_VERSION));
-
+/**/
 	if (!setupShaders()) {
 		return(1);
 	}
 
+	printf("Program ID: %d\n\n", shader.getProgramIndex());
+/**/
 	if (!setupSkyboxShaders()) {
 		return(1);
 	}
+
+	printf("Program ID: %d\n\n", shaderSkybox.getProgramIndex());
 
 	init();
 

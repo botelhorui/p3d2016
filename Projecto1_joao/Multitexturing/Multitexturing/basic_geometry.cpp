@@ -30,11 +30,10 @@ extern struct MyMesh mesh[];
 extern int objId;
 
 GLuint VboId[2];
+//GLuint sky_VboId;
 
 void createSkybox() {
-	mesh[objId].numIndexes = faceCount * 3;
-
-	float tangent[24 * 4];
+	mesh[objId].numIndexes = skyBoxFaceCount * 3;
 
 	glGenVertexArrays(1, &(mesh[objId].vao));
 	glBindVertexArray(mesh[objId].vao);
@@ -42,33 +41,25 @@ void createSkybox() {
 	glGenBuffers(2, VboId);
 	glBindBuffer(GL_ARRAY_BUFFER, VboId[0]);
 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) + sizeof(texCoords), NULL, GL_STATIC_DRAW);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-		glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices), sizeof(texCoords), texCoords);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(VERTEX_COORD_ATTRIB);
-	glVertexAttribPointer(VERTEX_COORD_ATTRIB, 4, GL_FLOAT, 0, 0, 0);
-	glEnableVertexAttribArray(TEXTURE_COORD_ATTRIB);
-	glVertexAttribPointer(TEXTURE_COORD_ATTRIB, 4, GL_FLOAT, 0, 0, (void *)(sizeof(vertices)));
-
+	glVertexAttribPointer(VERTEX_COORD_ATTRIB, 3, GL_FLOAT, 0, 0, 0);
 
 	//index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VboId[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * mesh[objId].numIndexes, faceIndex, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * mesh[objId].numIndexes, skyBoxFaceIndex, GL_STATIC_DRAW);
 
 	// unbind the VAO
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glDisableVertexAttribArray(VERTEX_COORD_ATTRIB);
-	glDisableVertexAttribArray(TEXTURE_COORD_ATTRIB);
 
 	mesh[objId].type = GL_TRIANGLES;
 }
 
 void createCube() {
-
-	mesh[objId].numIndexes = faceCount *3;
+	mesh[objId].numIndexes = faceCount * 3;
 
 	//void CalculateTangentArray(long vertexCount, const float *vertex, const float *normal, const float *texcoord, long triangleCount, const short *triangle, float *tangent)
 	float tangent[24 * 4];

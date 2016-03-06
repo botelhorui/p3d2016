@@ -5,12 +5,9 @@ uniform mat4 m_viewModel;
 uniform mat4 m_view;
 uniform mat3 m_normal;
 
-uniform vec4 l_pos;
-
 in vec4 position;
 in vec4 normal;    //por causa do gerador de geometria
 in vec4 texCoord;
-in vec4 tangent;
 
 out Data {
 	//vec3 normal;

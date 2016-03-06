@@ -15,7 +15,7 @@ typedef struct tImageTGA
 
 
 void TGA_Texture(unsigned int *textureArray, char *strFileName, int ID);
-void TGA_Texture_CubeMap(unsigned int textureArray);
+void TGA_Texture_CubeMap(unsigned int textureId);
 
 tImageTGA *Load_TGA(char *filename);
 

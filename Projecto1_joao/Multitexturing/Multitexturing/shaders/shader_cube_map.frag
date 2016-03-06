@@ -1,11 +1,8 @@
 #version 330
-#extension GL_NV_shadow_samplers_cube : enable
 
-uniform sampler2D texmap;
-uniform sampler2D texNormal;
+uniform sampler2D texMap;
 uniform samplerCube texCubeMap;
 
-uniform int texMode;
 out vec4 colorOut;
 
 struct Materials {
@@ -20,7 +17,7 @@ uniform Materials mat;
 
 //in vec4 tangentDebug;
 
-const float reflect_factor = 0.75;
+const float reflect_factor = 0.5;
 
 in Data {
 	//vec3 normal;
@@ -37,7 +34,7 @@ void debug();
 
 void main (void) {
 	// Perform a simple 2D texture look up.
-	vec3 base_color = texture(texmap, DataIn.tex_coord).rgb;
+	vec3 base_color = texture(texMap, DataIn.tex_coord).rgb;
 	// Perform a cube map look up.
 	vec4 cube_color = texture(texCubeMap, DataIn.reflected);
 	// Write the final pixel.

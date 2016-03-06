@@ -44,13 +44,15 @@ void TGA_Texture(unsigned int *textureArray, char *strFileName, int ID){
 	}
 }
 
-void TGA_Texture_CubeMap(unsigned int textureArray) {
+void TGA_Texture_CubeMap(unsigned int textureId) {
 	tImageTGA *pBitMap;
 	int textureType;
 
 	//Objecto textura a ser preenchido
 	//glEnable(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, textureArray);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureId);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -93,6 +95,8 @@ void TGA_Texture_CubeMap(unsigned int textureArray) {
 		//ATENCAO:Não funciona usar no parametro internal format da funcao o numero de canais. Tem de ser uma cont simbolica: GL_RGB ou GL_RGBA
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, textureType, pBitMap->size_x, pBitMap->size_y, 0, textureType, GL_UNSIGNED_BYTE, pBitMap->data);
 	}
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
 	if (pBitMap)
 	{

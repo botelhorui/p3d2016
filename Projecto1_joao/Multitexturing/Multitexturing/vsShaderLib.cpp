@@ -486,7 +486,6 @@ VSShaderLib::isProgramValid() {
 	GLint b = GL_FALSE;
 
 	if (pProgram) {
-	
 		glValidateProgram(pProgram);
 		glGetProgramiv(pProgram, GL_VALIDATE_STATUS,&b);
 	}
