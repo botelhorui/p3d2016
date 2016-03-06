@@ -43,10 +43,16 @@
     <None Include="shaders\lamp.vs">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="shaders\nanosuit.frag">
+    <None Include="shaders\simple.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="shaders\nanosuit.vs">
+    <None Include="shaders\simple.vs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\bump.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\bump.vs">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

@@ -25,7 +25,7 @@ class Model
 public:
 	/*  Functions   */
 	// Constructor, expects a filepath to a 3D model.
-	Model(GLchar* path)
+	Model(GLchar* path): model(glm::mat4())
 	{
 		this->loadModel(path);
 	}
@@ -33,12 +33,18 @@ public:
 	// Draws the model, and thus all its meshes
 	void Draw(Shader shader)
 	{
+		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		for (GLuint i = 0; i < this->meshes.size(); i++)
 			this->meshes[i].Draw(shader);
 	}
 
+	void setModelMatrix(glm::mat4 m) {
+		model = m;
+	}
+
 private:
 	/*  Model Data  */
+	glm::mat4 model;
 	vector<Mesh> meshes;
 	string directory;
 	vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
@@ -49,6 +55,7 @@ private:
 	{
 		// Read file via ASSIMP
 		Assimp::Importer importer;
+		//const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 		// Check for errors
 		if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
@@ -152,13 +159,13 @@ private:
 			// Normal: texture_normalN
 
 			// 1. Diffuse maps
-			vector<Texture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuseMap");
+			vector<Texture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, DIFFUSE_MAP);
 			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 			// 2. Specular maps
-			vector<Texture> specularMaps = this->loadMaterialTextures(material, aiTextureType_SPECULAR, "specularMap");
+			vector<Texture> specularMaps = this->loadMaterialTextures(material, aiTextureType_SPECULAR, SPECULAR_MAP);
 			textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-			vector<Texture> normalMaps = this->loadMaterialTextures(material, aiTextureType_HEIGHT, "normalMap");
+			vector<Texture> normalMaps = this->loadMaterialTextures(material, aiTextureType_HEIGHT, NORMAL_MAP);
 			textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 		}
 
@@ -211,12 +218,13 @@ GLint TextureFromFile(const char* path, string directory)
 	GLuint textureID;
 	glGenTextures(1, &textureID);
 	int width, height, channels;
-	unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, &channels, SOIL_LOAD_AUTO);
+	unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, &channels, SOIL_LOAD_RGB);
 	if (image == 0) {
 		std::cout << "Error loading texture: " << filename << std::endl;
 		// should throw exception??
 		return textureID;
 	}
+	std::cout << "loaded texture " << filename << " #channels: " << channels << std::endl;
 	// Assign texture to ID
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);

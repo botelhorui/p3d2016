@@ -10,18 +10,14 @@ out VS_OUT {
     vec3 LightPos;
 } vs_out;
 
-uniform mat4 projection;
-uniform mat4 view;
 uniform mat4 model;
-
-uniform vec3 lightPos;
-uniform vec3 viewPos;
+uniform mat4 view;
+uniform mat4 projection;
 
 void main()
 {
     gl_Position = projection * view * model * vec4(position, 1.0f);
-    vs_out.FragPos = vec3(view * model * vec4(position, 1.0));   
-    vs_out.TexCoords = texCoords;    
-    vs_out.Normal = transpose(inverse(mat3(view* model))) * normal;
-    vs_out.LightPos = vec3(view * vec4(lightPos, 1.0));
+    vs_out.FragPos = vec3(model * vec4(position, 1.0f));
+    vs_out.Normal = mat3(transpose(inverse(model))) * normal;
+    vs_out.TexCoords = texCoords;
 }

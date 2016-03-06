@@ -85,18 +85,24 @@ int main()
 	
 	// Build and compile our shader program
 	// TODO file existance is not verified
-	Shader nanosuitShader("shaders/nanosuit.vs", "shaders/nanosuit.frag");
 	Shader simpleShader("shaders/simple.vs", "shaders/simple.frag");
-	Shader normalShader("shaders/normal.vs", "shaders/normal.frag");
-	/Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
+	Shader normalShader("shaders/bump.vs", "shaders/bump.frag");
+	Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
 
 
 	
 	//Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
-	Model lampModel("resources/models/cube/cube.obj");
+	//Model lampModel("resources/models/cube/cube.obj");
 	Model cubeModel("resources/models/cube/cube.obj");
-	//Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
-	Model currentModel = cubeModel;
+	Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
+	glm::mat4 model;
+	// nanosuit config
+	//model = glm::rotate(model, 45.0f, glm::vec3(0, 1, 0));
+	model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+	model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
+	nanosuitModel.setModelMatrix(model);
+
+	Model currentModel = nanosuitModel;
 	// TODO import other formats
 
 	// Draw in wireframe
@@ -130,28 +136,19 @@ int main()
 		glm::mat4 view = camera.GetViewMatrix();		
 		// set projection matrix
 		glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
-		// set model matrix
-		glm::mat4 model;
-		// nanosuit config
-		
-		/*
-			model = glm::rotate(model, 45.0f, glm::vec3(0, 1, 0));
-			model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-			model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
-		*/
+		// set model matrix		
 
 		Shader shader = simpleShader;
 		if (bumpMapActive) {
 			shader = normalShader;
 		}
-
 		// Activate shader
 		shader.Use();
 		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		
 		glUniform3f(glGetUniformLocation(shader.Program, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
-		pointLight.x = -1.7f + 2*sin(glfwGetTime());		
+		pointLight.x = 2*sin(glfwGetTime());		
 		glUniform3f(glGetUniformLocation(shader.Program, "lightPos"), pointLight.x, pointLight.y, pointLight.z);
 		currentModel.Draw(shader);
 

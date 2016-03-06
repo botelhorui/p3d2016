@@ -31,10 +31,12 @@
   <ItemGroup>
     <None Include="shaders\lamp.frag" />
     <None Include="shaders\lamp.vs" />
-    <None Include="shaders\nanosuit.frag" />
-    <None Include="shaders\nanosuit.vs">
+    <None Include="shaders\simple.frag" />
+    <None Include="shaders\simple.vs">
       <FileType>Document</FileType>
     </None>
+    <None Include="shaders\bump.frag" />
+    <None Include="shaders\bump.vs" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8D235F0C-A3BF-4D5B-ADBE-68B3476487CB}</ProjectGuid>
