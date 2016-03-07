@@ -146,40 +146,52 @@ void renderScene(void) {
 	FrameCount++;
 	glClearColor(0.2f, 0.5f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glEnable(GL_TEXTURE_CUBE_MAP);
+
+/**/
+	// Skybox rendering
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+
+	glUseProgram(shaderSkybox.getProgramIndex());
+
+	objId = 1;
+
+	glActiveTexture(GL_TEXTURE0);
+	glUniform1i(sky_tex_loc, 0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureCubeMap);
+
+	glUniformMatrix4fv(sky_v_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
+	glUniformMatrix4fv(sky_p_uniformId, 1, GL_FALSE, mMatrix[PROJECTION]);
+
+	glBindVertexArray(mesh[objId].vao);
+	//glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glDrawArrays(mesh[objId].type, 0, mesh[objId].numIndexes);
+	glBindVertexArray(0);
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+
+	// Skybox rendering
+/**/
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+
 	// load identity matrices
-	loadIdentity(VIEW);
-	loadIdentity(MODEL);
+	loadIdentity(MODEL); // Model matrix is set to identity matrix
+	loadIdentity(VIEW); // View matrix is set to identity matrix
+	//loadIdentity(PROJECTION); // Projection matrix is set to identity matrix
+
 	// set the camera using a function similar to gluLookAt
 	lookAt(camX, camY, camZ, 0, 0, 0, 0, 1, 0);
-
 /**/
 	// Model rendering
 	glUseProgram(shader.getProgramIndex());
 
-	//send the light position in eye coordinates
-
-		//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
-
-	float res[4];
-	multMatrixPoint(VIEW, lightPos, res);   //lightPos definido em World Coord so it is converted to eye space
-	glUniform4fv(lPos_uniformId, 1, res);
-
 	//Associar os Texture Units aos Objects Texture
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
-/** /
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
 
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, textureCubeMap);
-
-	//Indicar aos tres samplers do GLSL quais os Texture Units a serem usados
-	glUniform1i(tex_loc, 0);
-	glUniform1i(tex_loc1, 1);
-	glUniform1i(tex_loc2, 2);
-/**/
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, textureCubeMap);
 
@@ -188,33 +200,9 @@ void renderScene(void) {
 
 	objId = 0;
 
-	// send the material
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	switch (rotateObject) {
-		case 1:
-			rotateAngleX += 0.05f;
-			//rotate(MODEL, rotateAngleX, 1.0f, 0.0f, 0.0f);
-			break;
-		case 2:
-			rotateAngleY += 0.05f;
-			//rotate(MODEL, rotateAngleY, 0.0f, 1.0f, 0.0f);
-			break;
-		case 3:
-			rotateAngleZ += 0.05f;
-			//rotate(MODEL, rotateAngleZ, 0.0f, 0.0f, 1.0f);
-			break;
-		default:
-			break;
-	}
+	translate(MODEL, -0.5f, -0.5f, -0.5f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -234,8 +222,11 @@ void renderScene(void) {
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
-/**/
+/** /
 	// Skybox rendering
+	//lookAt(0, 0, 0, camX, camY, camZ, 0, 1, 0);
+	//translate(MODEL, camX, camY, camZ);
+
 	glDepthFunc(GL_LEQUAL);
 	glUseProgram(shaderSkybox.getProgramIndex());
 
@@ -245,8 +236,8 @@ void renderScene(void) {
 	glUniform1i(sky_tex_loc, 0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, textureCubeMap);
 
-	glUniformMatrix4fv(sky_p_uniformId, 1, GL_FALSE, mMatrix[PROJECTION]);
 	glUniformMatrix4fv(sky_v_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
+	glUniformMatrix4fv(sky_p_uniformId, 1, GL_FALSE, mMatrix[PROJECTION]);
 
 	glBindVertexArray(mesh[objId].vao);
 	//glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
@@ -254,9 +245,9 @@ void renderScene(void) {
 	glBindVertexArray(0);
 	glDepthFunc(GL_LESS);
 	// Skybox rendering
-/**/
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+/**/
 	glutSwapBuffers();
 }
 

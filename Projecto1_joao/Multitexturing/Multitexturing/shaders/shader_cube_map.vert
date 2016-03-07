@@ -10,13 +10,7 @@ in vec4 normal;    //por causa do gerador de geometria
 in vec4 texCoord;
 
 out Data {
-	//vec3 normal;
-	//vec3 eye;
-	//vec3 lightDir;
 	vec2 tex_coord;
-	//vec4 tangentDebug;
-	vec3 halfVec_tangent;
-	vec3 lightVec_tangent;
 	vec3 reflected;
 } DataOut;
 

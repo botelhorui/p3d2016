@@ -81,7 +81,7 @@ void TGA_Texture_CubeMap(unsigned int textureId) {
 			exit(0);
 			break;
 		}
-
+/**/
 		if (pBitMap == NULL) {
 			exit(0);
 		}
@@ -92,8 +92,8 @@ void TGA_Texture_CubeMap(unsigned int textureId) {
 			textureType = GL_RGBA;
 		}
 
-		//ATENCAO:Não funciona usar no parametro internal format da funcao o numero de canais. Tem de ser uma cont simbolica: GL_RGB ou GL_RGBA
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, textureType, pBitMap->size_x, pBitMap->size_y, 0, textureType, GL_UNSIGNED_BYTE, pBitMap->data);
+/**/
 	}
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
