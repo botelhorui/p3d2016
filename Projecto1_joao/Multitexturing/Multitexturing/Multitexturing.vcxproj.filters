@@ -73,5 +73,11 @@
     <None Include="shaders\shader_skybox.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="shaders\shader_sphere_map.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\shader_sphere_map.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

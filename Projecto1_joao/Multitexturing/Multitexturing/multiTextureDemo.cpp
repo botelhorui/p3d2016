@@ -42,6 +42,7 @@ unsigned int FrameCount = 0;
 
 VSShaderLib shader;
 VSShaderLib shaderSkybox;
+VSShaderLib shaderSphere;
 
 struct MyMesh mesh[2];
 int objId = 0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
@@ -70,10 +71,16 @@ GLint sky_tex_loc; // cube map
 GLint sky_p_uniformId;
 GLint sky_v_uniformId;
 
+// Sphere map
+GLint sph_mvp_uniformId;
+GLint sph_vm_uniformId;
+GLint sph_n_uniformId;
+GLint sph_textureMapId;
+GLint sph_textureEnvironmentId;
+
 GLuint TextureArray[3];
 GLuint textureCubeMap;
-//GLuint fragmentShaderSkyboxId;
-//GLuint vertexShaderSkyboxId;
+GLuint textureSphereMap;
 
 // Camera Position
 float camX, camY, camZ;
@@ -148,6 +155,53 @@ void renderScene(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 /**/
+	// Sphere map rendering
+	glUseProgram(shaderSkybox.getProgramIndex());
+
+	// load identity matrices
+	loadIdentity(MODEL); // Model matrix is set to identity matrix
+	loadIdentity(VIEW); // View matrix is set to identity matrix
+						//loadIdentity(PROJECTION); // Projection matrix is set to identity matrix
+
+						// set the camera using a function similar to gluLookAt
+	lookAt(camX, camY, camZ, 0, 0, 0, 0, 1, 0);
+
+	// Model rendering
+	glUseProgram(shaderSphere.getProgramIndex());
+
+	//Associar os Texture Units aos Objects Texture
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
+
+	glUniform1i(sph_textureEnvironmentId, 0);
+	glUniform1i(sph_textureMapId, 1);
+
+	objId = 0;
+
+	pushMatrix(MODEL);
+
+	//translate(MODEL, -0.5f, -0.5f, -0.5f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(sph_vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(sph_mvp_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(sph_n_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	// Sphere map rendering
+/** /
 	// Skybox rendering
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
@@ -172,8 +226,7 @@ void renderScene(void) {
 	glDepthMask(GL_TRUE);
 
 	// Skybox rendering
-/**/
-
+/** /
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
 
@@ -184,7 +237,7 @@ void renderScene(void) {
 
 	// set the camera using a function similar to gluLookAt
 	lookAt(camX, camY, camZ, 0, 0, 0, 0, 1, 0);
-/**/
+
 	// Model rendering
 	glUseProgram(shader.getProgramIndex());
 
@@ -221,7 +274,6 @@ void renderScene(void) {
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
 /** /
 	// Skybox rendering
 	//lookAt(0, 0, 0, camX, camY, camZ, 0, 1, 0);
@@ -498,6 +550,32 @@ GLuint setupSkyboxShaders() {
 
 	return(shaderSkybox.isProgramValid());
 }
+
+GLuint setupSphereShaders() {
+	// Shader for models
+	shaderSphere.init();
+	shaderSphere.loadShader(VSShaderLib::VERTEX_SHADER, "shaders/shader_sphere_map.vert");
+	shaderSphere.loadShader(VSShaderLib::FRAGMENT_SHADER, "shaders/shader_sphere_map.frag");
+
+	// set semantics for the shader variables
+	glBindFragDataLocation(shaderSphere.getProgramIndex(), 0, "colorOut");
+	glBindAttribLocation(shaderSphere.getProgramIndex(), VERTEX_COORD_ATTRIB, "position");
+	glBindAttribLocation(shaderSphere.getProgramIndex(), NORMAL_ATTRIB, "normal");
+	glBindAttribLocation(shaderSphere.getProgramIndex(), TEXTURE_COORD_ATTRIB, "texCoord");
+
+	glLinkProgram(shaderSphere.getProgramIndex());
+
+	sph_mvp_uniformId = glGetUniformLocation(shaderSphere.getProgramIndex(), "m_pvm");
+	sph_vm_uniformId = glGetUniformLocation(shaderSphere.getProgramIndex(), "m_viewModel");
+	sph_n_uniformId = glGetUniformLocation(shaderSphere.getProgramIndex(), "m_normal");
+	sph_textureEnvironmentId = glGetUniformLocation(shaderSphere.getProgramIndex(), "texEnvironment");
+	sph_textureMapId = glGetUniformLocation(shaderSphere.getProgramIndex(), "texMap");
+
+	printf("InfoLog for Sphere Shader\n%s", shaderSphere.getAllInfoLogs().c_str());
+
+	return(shaderSphere.isProgramValid());
+}
+
 // ------------------------------------------------------------
 //
 // Model loading and OpenGL setup
@@ -510,14 +588,18 @@ void init(){
 	camY = r *   						     sin(beta * 3.14f / 180.0f);
 
 	//Texture Object definition
-/**/	
+/** /	
 	glGenTextures(2, TextureArray);
 	TGA_Texture(TextureArray, "stone.tga", 0);
 	TGA_Texture(TextureArray, "normal.tga", 1);
-/**/
+/** /
 	//glEnable(GL_TEXTURE_CUBE_MAP);
 	glGenTextures(1, &textureCubeMap);
 	TGA_Texture_CubeMap(textureCubeMap);
+/**/
+	glGenTextures(2, TextureArray);
+	TGA_Texture(TextureArray, "SphereMap/Angular-Reflection-Map.tga", 0);
+	TGA_Texture(TextureArray, "stone.tga", 1);
 
 	float amb[]= {0.2f, 0.15f, 0.1f, 1.0f};
 	float diff[] = {0.8f, 0.6f, 0.4f, 1.0f};
@@ -539,10 +621,10 @@ void init(){
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
 	createCube();
-
+/** /
 	objId = 1;
 	createSkybox();
-
+/**/
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -597,18 +679,28 @@ int main(int argc, char **argv) {
 	printf ("Renderer: %s\n", glGetString (GL_RENDERER));
 	printf ("Version: %s\n", glGetString (GL_VERSION));
 	printf ("GLSL: %s\n", glGetString (GL_SHADING_LANGUAGE_VERSION));
-/**/
+
+/* Normal shaders */
 	if (!setupShaders()) {
 		return(1);
 	}
 
 	printf("Program ID: %d\n\n", shader.getProgramIndex());
-/**/
+
+/* Cube mapping shaders */
 	if (!setupSkyboxShaders()) {
 		return(1);
 	}
-
+	
 	printf("Program ID: %d\n\n", shaderSkybox.getProgramIndex());
+
+/* Sphere mapping shaders */
+	if (!setupSphereShaders()) {
+		return(1);
+	}
+
+	printf("Program ID: %d\n\n", shaderSphere.getProgramIndex());
+/**/
 
 	init();
 
