@@ -17,7 +17,7 @@ void main (void) {
 	vec4 environment = texture(texEnvironment, DataIn.sphereCoord.st);
 
 	// Write the final pixel.
-	colorOut = color + environment * reflectFactor;
-	//colorOut = environment * reflectFactor;
+	//colorOut = color + environment * reflectFactor;
+	colorOut = environment * reflectFactor;
 	//colorOut = color;
 }
