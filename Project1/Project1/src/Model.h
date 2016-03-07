@@ -325,3 +325,7 @@ GLfloat skyboxVertices[] = {
 	-1.0f, -1.0f,  1.0f,
 	1.0f, -1.0f,  1.0f
 };
+
+class SkyboxModel {
+
+};

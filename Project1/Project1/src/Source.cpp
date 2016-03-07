@@ -52,9 +52,12 @@ GLfloat lastFrame = 0.0f;  	// Time of last frame
 glm::vec3 lightPos(1.2f, 3.0f, -0.0f);
 
 bool bumpMapActive = false;
+bool mappingMode = true;
 
 std::vector<Model> models;
 int currentModelIndex = 0;
+std::vector<int> skyboxTextures;
+int currentSkyboxIndex = 0;
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
@@ -96,7 +99,7 @@ int main()
 	Shader normalShader("shaders/bump.vs", "shaders/bump.frag");
 	Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
 	Shader skyboxShader("shaders/skybox.vs", "shaders/skybox.frag");
-
+	Shader sphereMapShader("shaders/sphere.vs", "shaders/sphere.frag");
 	
 	//Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
 	//Model lampModel("resources/models/cube/cube.obj");
@@ -137,6 +140,7 @@ int main()
 	glBindVertexArray(0);
 
 	vector<const GLchar*> faces;
+	/*	
 	faces.push_back("resources/textures/cubemap/posx.tga");
 	faces.push_back("resources/textures/cubemap/negx.tga");
 	faces.push_back("resources/textures/cubemap/posy.tga");
@@ -144,9 +148,24 @@ int main()
 	faces.push_back("resources/textures/cubemap/posz.tga");
 	faces.push_back("resources/textures/cubemap/negz.tga");
 	GLuint cubemapTexture = loadCubemap(faces);
+	*/
 
+	faces.clear();
+	faces.push_back("resources/textures/waterbox/posx.jpg");
+	faces.push_back("resources/textures/waterbox/negx.jpg");
+	faces.push_back("resources/textures/waterbox/posy.jpg");
+	faces.push_back("resources/textures/waterbox/negy.jpg");
+	faces.push_back("resources/textures/waterbox/posz.jpg");
+	faces.push_back("resources/textures/waterbox/negz.jpg");
+	GLuint watermapTexture = loadCubemap(faces);
+
+	skyboxTextures.push_back(watermapTexture);
+	//skyboxTextures.push_back(cubemapTexture);
+	
 
 	glEnable(GL_DEPTH_TEST);
+
+	GLint sphereTexture = TextureFromFile("spheremap.JPG", "resources/textures");
 
 	// Game loop
 	while (!glfwWindowShouldClose(window))
@@ -171,16 +190,25 @@ int main()
 		// set projection matrix
 		glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 
-		Shader shader = simpleShader;
+
+		//Shader shader = simpleShader;
+		Shader shader = sphereMapShader;
 		if (bumpMapActive) {
 			shader = normalShader;
 		}
 		// Activate shader
 		shader.Use();
+
+		// Set skybox
+		/*
 		glActiveTexture(GL_TEXTURE0+3);
 		glUniform1i(glGetUniformLocation(shader.Program, "skybox"), 3);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-
+		glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextures[currentSkyboxIndex]);
+		*/
+		glActiveTexture(GL_TEXTURE0 + 3);
+		glUniform1i(glGetUniformLocation(shader.Program, "sphereMap"), 3);
+		glBindTexture(GL_TEXTURE_2D, sphereTexture);
+		
 		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 		
@@ -209,7 +237,7 @@ int main()
 		glBindVertexArray(skyboxVAO);
 		glActiveTexture(GL_TEXTURE0);
 		glUniform1i(glGetUniformLocation(skyboxShader.Program, "skybox"), 0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextures[currentSkyboxIndex]);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS); // Set depth function back to default	
@@ -235,6 +263,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 	else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
 		currentModelIndex = (currentModelIndex + 1) % models.size();
+	} else if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+		currentSkyboxIndex = (currentSkyboxIndex + 1) % skyboxTextures.size();
+	} else if (key == GLFW_KEY_M && action == GLFW_PRESS) {
+		//cubemapActive = !cubemapActive;
 	}
 	if (key >= 0 && key < 1024)
 	{
