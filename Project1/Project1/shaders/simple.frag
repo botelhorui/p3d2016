@@ -30,8 +30,8 @@ void main()
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
     
     // Combine results
-    vec3 ambient = 0.1 * vec3(texture(diffuseMap1, fs_in.TexCoords));
-    vec3 diffuse = 0.3 * diff * vec3(texture(diffuseMap1, fs_in.TexCoords));
+    vec3 ambient = 0.2 * vec3(texture(diffuseMap1, fs_in.TexCoords));
+    vec3 diffuse = 0.5 * diff * vec3(texture(diffuseMap1, fs_in.TexCoords));
     vec3 specular = 0.3 * spec * vec3(texture(specularMap1, fs_in.TexCoords));
 
     color = vec4(ambient + diffuse + specular, 1.0f);

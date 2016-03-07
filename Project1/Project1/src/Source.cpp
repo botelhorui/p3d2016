@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 // GLEW
 #define GLEW_STATIC
@@ -47,9 +48,12 @@ GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
 // Light
-glm::vec3 lightPos(1.2f, 1.0f, -2.0f);
+glm::vec3 lightPos(1.2f, 3.0f, -0.0f);
 
 bool bumpMapActive = false;
+
+std::vector<Model> models;
+int currentModelIndex = 0;
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
@@ -85,7 +89,7 @@ int main()
 	
 	// Build and compile our shader program
 	// TODO file existance is not verified
-	Shader simpleShader("shaders/simple.vs", "shaders/simple.frag");
+	Shader simpleShader("shaders/simple.vs", "shaders/simple.frag");	
 	Shader normalShader("shaders/bump.vs", "shaders/bump.frag");
 	Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
 
@@ -94,23 +98,26 @@ int main()
 	//Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
 	//Model lampModel("resources/models/cube/cube.obj");
 	Model cubeModel("resources/models/cube/cube.obj");
+	Model lampModel("resources/models/lamp/lamp.obj");
+	models.push_back(cubeModel);
+	Model sphereModel("resources/models/sphere/sphere.obj");
+	models.push_back(sphereModel);
+	Model torusModel("resources/models/torus/torus.obj");
+	models.push_back(torusModel);
 	Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
 	glm::mat4 model;
-	// nanosuit config
 	//model = glm::rotate(model, 45.0f, glm::vec3(0, 1, 0));
 	model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
 	model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
 	nanosuitModel.setModelMatrix(model);
-
-	Model currentModel = nanosuitModel;
+	models.push_back(nanosuitModel);
 	// TODO import other formats
 
 	// Draw in wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	// Point light positions
-	
-	glm::vec3 pointLight(-1.7f, 0.0f, 3.0f);
+	// Point light positions	
+	glm::vec3 pointLight(-1.7f, 1.2f, 1.0f);
 
 	//
 	glEnable(GL_DEPTH_TEST);
@@ -150,8 +157,19 @@ int main()
 		glUniform3f(glGetUniformLocation(shader.Program, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
 		pointLight.x = 2*sin(glfwGetTime());		
 		glUniform3f(glGetUniformLocation(shader.Program, "lightPos"), pointLight.x, pointLight.y, pointLight.z);
-		currentModel.Draw(shader);
+		models[currentModelIndex].Draw(shader);
 
+		// draw lamp
+		model = glm::mat4();
+		model = glm::translate(model, pointLight);
+		model = glm::scale(model, glm::vec3(0.2));	
+		lampModel.setModelMatrix(model);
+		lampShader.Use();
+		glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		lampModel.Draw(lampShader);
+		
 		// Swap the screen buffers
 		glfwSwapBuffers(window);
 	}
@@ -168,8 +186,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
-	}if (key == GLFW_KEY_N && action == GLFW_PRESS) {
+	}else if (key == GLFW_KEY_N && action == GLFW_PRESS) {
 		bumpMapActive = !bumpMapActive;
+	}
+	else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
+		currentModelIndex = (currentModelIndex + 1) % models.size();
 	}
 	if (key >= 0 && key < 1024)
 	{

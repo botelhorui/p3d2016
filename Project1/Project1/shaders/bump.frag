@@ -24,22 +24,23 @@ void main()
 
     // Transform normal vector to range [-1,1]
     normal = normalize(normal * 2.0 - 1.0);  // this normal is in tangent space
+    vec3 lightDir = normalize(fs_in.TangentLightPos - fs_in.TangentFragPos);
+    vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
 
     // Get diffuse color
     vec3 color = texture(diffuseMap1, fs_in.TexCoords).rgb;
-    // Ambient
-    vec3 ambient = 0.1 * color;
-    // Diffuse
-    vec3 lightDir = normalize(fs_in.TangentLightPos - fs_in.TangentFragPos);
-    float diff = max(dot(lightDir, normal), 0.0);
-    vec3 diffuse = diff * color;
-    // Specular
-    vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
-    vec3 reflectDir = reflect(-lightDir, normal);
-    vec3 halfwayDir = normalize(lightDir + viewDir);  
     
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
-    vec3 specular = vec3(0.2) * spec;
+    // Diffuse    
+    float diff = max(dot(lightDir, normal), 0.0);
+    
+    // Specular    
+    vec3 reflectDir = reflect(-lightDir, normal);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);    
+
+    // Combine results
+    vec3 ambient = 0.2 * color;
+    vec3 diffuse = 0.7 * diff * color;
+    vec3 specular = 0.3 * spec * color;
     
     FragColor = vec4(ambient + diffuse + specular, 1.0f);
 

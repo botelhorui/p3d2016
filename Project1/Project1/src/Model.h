@@ -27,12 +27,17 @@ public:
 	// Constructor, expects a filepath to a 3D model.
 	Model(GLchar* path): model(glm::mat4())
 	{
-		this->loadModel(path);
+		this->isLoaded = false;
+		this->path = path;
 	}
 
 	// Draws the model, and thus all its meshes
 	void Draw(Shader shader)
 	{
+		if (!this->isLoaded) {
+			this->loadModel(path);
+			this->isLoaded = true;
+		}
 		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		for (GLuint i = 0; i < this->meshes.size(); i++)
 			this->meshes[i].Draw(shader);
@@ -44,6 +49,8 @@ public:
 
 private:
 	/*  Model Data  */
+	bool isLoaded;
+	GLchar* path;
 	glm::mat4 model;
 	vector<Mesh> meshes;
 	string directory;
