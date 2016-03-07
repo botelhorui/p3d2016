@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 // GLEW
 #define GLEW_STATIC
@@ -25,11 +26,12 @@
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset); 
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mode);
 void do_movement();
 
 // Window dimensions
-const GLuint WIDTH = 800, HEIGHT = 600;
+const GLuint WIDTH = 1280, HEIGHT = 800;
 const std::string WINDOW_TITLE = "P3D 2016";
 
 // Camera
@@ -47,7 +49,12 @@ GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
 // Light
-glm::vec3 lightPos(1.2f, 1.0f, -2.0f);
+glm::vec3 lightPos(1.2f, 3.0f, -0.0f);
+
+bool bumpMapActive = false;
+
+std::vector<Model> models;
+int currentModelIndex = 0;
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
@@ -68,8 +75,10 @@ int main()
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 	// GLFW Options, locks cursor inside window
+	
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
@@ -80,53 +89,65 @@ int main()
 	// Define the viewport dimensions
 	glViewport(0, 0, WIDTH, HEIGHT);
 
-	//
-	glEnable(GL_DEPTH_TEST);
-
+	
 	// Build and compile our shader program
 	// TODO file existance is not verified
-	Shader nanosuitShader("shaders/nanosuit.vs", "shaders/nanosuit.frag");
+	Shader simpleShader("shaders/simple.vs", "shaders/simple.frag");	
+	Shader normalShader("shaders/bump.vs", "shaders/bump.frag");
 	Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
-	if (!nanosuitShader.ok || !lampShader.ok) {
-		int c;
-		glfwTerminate();
-		std::cin >> c;		
-	}
+	Shader skyboxShader("shaders/skybox.vs", "shaders/skybox.frag");
 
 	
-	Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
-	Model cubeModel("resources/models/cube.obj");
+	//Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
+	//Model lampModel("resources/models/cube/cube.obj");
+	Model cubeModel("resources/models/cube/cube.obj");
+	Model lampModel("resources/models/lamp/lamp.obj");	
+	Model sphereModel("resources/models/sphere/sphere.obj");	
+	Model torusModel("resources/models/torus/torus.obj");	
+	Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");	
+
+	glm::mat4 model;
+	//model = glm::rotate(model, 45.0f, glm::vec3(0, 1, 0));
+	model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+	model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
+	nanosuitModel.setModelMatrix(model);
+
+	models.push_back(cubeModel);
+	models.push_back(torusModel);
+	models.push_back(sphereModel);
+	models.push_back(nanosuitModel);
 	// TODO import other formats
 
 	// Draw in wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	// Point light positions
-	glm::vec3 pointLightPositions[] = {
-		glm::vec3(2.3f, -1.6f, -3.0f),
-		glm::vec3(-1.7f, 0.9f, 1.0f)
-	};
-	
-	nanosuitShader.Use();
-	
-	// Set the lighting uniforms
-	// Point light 1
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].position"), pointLightPositions[0].x, pointLightPositions[0].y, pointLightPositions[0].z);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].ambient"), 0.05f, 0.05f, 0.05f);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].diffuse"), 1.0f, 1.0f, 1.0f);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].specular"), 1.0f, 1.0f, 1.0f);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].constant"), 1.0f);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].linear"), 0.009);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[0].quadratic"), 0.0032);
-	// Point light 2
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].position"), pointLightPositions[1].x, pointLightPositions[1].y, pointLightPositions[1].z);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].ambient"), 0.05f, 0.05f, 0.05f);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].diffuse"), 1.0f, 1.0f, 1.0f);
-	glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].specular"), 1.0f, 1.0f, 1.0f);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].constant"), 1.0f);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].linear"), 0.009);
-	glUniform1f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].quadratic"), 0.0032);
-	
+	// Point light positions	
+	glm::vec3 pointLight(-1.7f, 1.2f, 1.0f);
+
+	// load skybox
+	// Setup skybox VAO
+	GLuint skyboxVAO, skyboxVBO;
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glBindVertexArray(0);
+
+	vector<const GLchar*> faces;
+	faces.push_back("resources/textures/cubemap/posx.tga");
+	faces.push_back("resources/textures/cubemap/negx.tga");
+	faces.push_back("resources/textures/cubemap/posy.tga");
+	faces.push_back("resources/textures/cubemap/negy.tga");
+	faces.push_back("resources/textures/cubemap/posz.tga");
+	faces.push_back("resources/textures/cubemap/negz.tga");
+	GLuint cubemapTexture = loadCubemap(faces);
+
+
+	glEnable(GL_DEPTH_TEST);
+
 	// Game loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -141,30 +162,57 @@ int main()
 
 		// Render
 		// Clear the colorbuffer
-		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// set view matrix
 		glm::mat4 view = camera.GetViewMatrix();		
 		// set projection matrix
 		glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
-		// set model matrix
-		glm::mat4 model;
-		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
 
+		Shader shader = simpleShader;
+		if (bumpMapActive) {
+			shader = normalShader;
+		}
 		// Activate shader
-		nanosuitShader.Use();	
-		glUniformMatrix4fv(glGetUniformLocation(nanosuitShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(glGetUniformLocation(nanosuitShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(glGetUniformLocation(nanosuitShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		shader.Use();
+		glActiveTexture(GL_TEXTURE0+3);
+		glUniform1i(glGetUniformLocation(shader.Program, "skybox"), 3);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
-		glUniform3f(glGetUniformLocation(nanosuitShader.Program, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 		
-		pointLightPositions[1].x = -1.7f + 2*sin(glfwGetTime());
-		glUniform3f(glGetUniformLocation(nanosuitShader.Program, "pointLights[1].position"), pointLightPositions[1].x, pointLightPositions[1].y, pointLightPositions[1].z);
-		// Render
-		nanosuitModel.Draw(nanosuitShader);
+		glUniform3f(glGetUniformLocation(shader.Program, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+		pointLight.x = 2*sin(glfwGetTime());		
+		glUniform3f(glGetUniformLocation(shader.Program, "lightPos"), pointLight.x, pointLight.y, pointLight.z);
+		models[currentModelIndex].Draw(shader);
+
+		// draw lamp
+		model = glm::mat4();
+		model = glm::translate(model, pointLight);
+		model = glm::scale(model, glm::vec3(0.2));	
+		lampModel.setModelMatrix(model);
+		lampShader.Use();
+		glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		lampModel.Draw(lampShader);
+		
+		// draw skybox
+		glDepthFunc(GL_LEQUAL);  // Change depth function so depth test passes when values are equal to depth buffer's content
+		skyboxShader.Use();
+		glm::mat4 skyboxView = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+		glUniformMatrix4fv(glGetUniformLocation(skyboxShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(skyboxView));
+		glUniformMatrix4fv(glGetUniformLocation(skyboxShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		glBindVertexArray(skyboxVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1i(glGetUniformLocation(skyboxShader.Program, "skybox"), 0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+		glDepthFunc(GL_LESS); // Set depth function back to default	
 
 		// Swap the screen buffers
 		glfwSwapBuffers(window);
@@ -180,8 +228,14 @@ int main()
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
+	}else if (key == GLFW_KEY_N && action == GLFW_PRESS) {
+		bumpMapActive = !bumpMapActive;
+	}
+	else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
+		currentModelIndex = (currentModelIndex + 1) % models.size();
+	}
 	if (key >= 0 && key < 1024)
 	{
 		if (action == GLFW_PRESS)
@@ -189,6 +243,20 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		else if (action == GLFW_RELEASE)
 			keys[key] = false;
 	}
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mode) {
+	/*
+	if (button == GLFW_MOUSE_BUTTON_LEFT) {
+		if (action == GLFW_PRESS) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+		else
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+	}
+	*/
 }
 
 void do_movement()

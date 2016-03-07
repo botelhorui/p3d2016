@@ -13,7 +13,11 @@ using namespace std;
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Shader.h"
+const std::string DIFFUSE_MAP = "diffuseMap";
+const std::string SPECULAR_MAP = "specularMap";
+const std::string NORMAL_MAP = "normalMap";
+
+#define NORMAL_TEXTURE
 
 struct Vertex {
 	// Position
@@ -22,6 +26,10 @@ struct Vertex {
 	glm::vec3 Normal;
 	// TexCoords
 	glm::vec2 TexCoords;
+	// tangent
+	glm::vec3 Tangent;
+	// bitangent
+	glm::vec3 Bitangent;
 };
 
 struct Texture {
@@ -55,6 +63,7 @@ public:
 		// Bind appropriate textures
 		GLuint diffuseNr = 1;
 		GLuint specularNr = 1;
+		GLuint normalNr = 1;
 		for (GLuint i = 0; i < this->textures.size(); i++)
 		{
 			glActiveTexture(GL_TEXTURE0 + i); // Active proper texture unit before binding
@@ -62,10 +71,15 @@ public:
 			stringstream ss;
 			string number;
 			string name = this->textures[i].type;
-			if (name == "texture_diffuse")
+			if (name == DIFFUSE_MAP)
 				ss << diffuseNr++; // Transfer GLuint to stream
-			else if (name == "texture_specular")
+			else if (name == SPECULAR_MAP)
 				ss << specularNr++; // Transfer GLuint to stream
+			else if (name == NORMAL_MAP)
+				ss << normalNr++;
+			else {
+				std::cerr << "Mesh::Draw invalid texture type";
+			}
 			number = ss.str();
 			// Now set the sampler to the correct texture unit
 			glUniform1i(glGetUniformLocation(shader.Program, (name + number).c_str()), i);
@@ -74,7 +88,7 @@ public:
 		}
 
 		// Also set each mesh's shininess property to a default value (if you want you could extend this to another mesh property and possibly change this value)
-		glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 16.0f);
+		glUniform1f(glGetUniformLocation(shader.Program, "shininess"), 32.0f);
 
 		// Draw mesh
 		glBindVertexArray(this->VAO);
@@ -123,7 +137,14 @@ private:
 		// Vertex Texture Coords
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, TexCoords));
-
+		
+		// Vertex Tangents Coords
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Tangent));
+		// Vertex Bitangents Coords
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Bitangent));
+		
 		glBindVertexArray(0);
 	}
 };
