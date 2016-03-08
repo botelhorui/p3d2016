@@ -40,6 +40,7 @@ public:
 		catch (const ifstream::failure e)
 		{
 			cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << endl;
+			cout << vertexPath << endl;
 			ok = false;
 			//should quit program?
 		}
@@ -70,6 +71,7 @@ public:
 		if (!success) {
 			glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
 			std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+			cout << fragmentPath << endl;
 			ok = false;
 			//should quit program?
 		}

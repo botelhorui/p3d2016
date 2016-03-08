@@ -52,11 +52,5 @@ void main()
     vec3 specular = vec3(1.0) * spec * specularColor;
     
     vec4 bumpColor = vec4(ambient + diffuse + specular, 1.0f);
-
-    vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-    vec3 R = reflect(-viewDir, normal);
-    // cubemap lookup
-    vec4 environmentColor = texture(skybox, R);
-
-    FragColor = mix(bumpColor, environmentColor, reflectFactor);
+    FragColor = bumpColor;
 }

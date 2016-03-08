@@ -47,6 +47,10 @@ public:
 		model = m;
 	}
 
+	glm::mat4 getModelMatrix() {
+		return model;
+	}
+
 private:
 	/*  Model Data  */
 	bool isLoaded;

@@ -17,8 +17,6 @@ uniform samplerCube skybox;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 
-const float reflectFactor = 0.50;
-
 void main()
 {    
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
@@ -41,10 +39,5 @@ void main()
     vec3 specular = vec3(1.0) * spec * specularColor;
 
     vec4 textureColor = vec4(ambient + diffuse + specular, 1.0f);
-
-    vec3 R = reflect(-viewDir, normal);
-    // cubemap lookup
-    vec4 cubeColor = texture(skybox, R);
-    color = mix(textureColor, cubeColor, reflectFactor);
-    
+	color = textureColor;
 }

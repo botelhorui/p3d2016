@@ -59,6 +59,9 @@ int currentModelIndex = 0;
 std::vector<int> skyboxTextures;
 int currentSkyboxIndex = 0;
 
+std::vector<Shader> shaders;
+int currentShaderIndex = 0;
+
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
@@ -94,23 +97,43 @@ int main()
 
 	
 	// Build and compile our shader program
-	// TODO file existance is not verified
+
+	// texture and phong
 	Shader simpleShader("shaders/simple.vs", "shaders/simple.frag");	
+
+	// texture, phong, normal
 	Shader normalShader("shaders/bump.vs", "shaders/bump.frag");
+
+	// reflect only
+	Shader reflectOnlyShader("shaders/reflect_only.vs", "shaders/reflect_only.frag");
+
+	// reclect, texture, phong
+	Shader reflectShader("shaders/reflect.vs", "shaders/reflect.frag");
+
+	// phong, texture, normal, reflect
+	Shader mixShader("shaders/mix.vs", "shaders/mix.frag");
+
+	// sphere map
+	Shader sphereMapShader("shaders/sphere.vs", "shaders/sphere.frag");
+
+	// add to vector
+	shaders.push_back(simpleShader);
+	shaders.push_back(normalShader);
+	shaders.push_back(reflectOnlyShader);
+	shaders.push_back(reflectShader);
+	shaders.push_back(mixShader);
+	shaders.push_back(sphereMapShader);
+
 	Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
 	Shader skyboxShader("shaders/skybox.vs", "shaders/skybox.frag");
-	Shader sphereMapShader("shaders/sphere.vs", "shaders/sphere.frag");
 	
-	//Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
-	//Model lampModel("resources/models/cube/cube.obj");
 	Model cubeModel("resources/models/cube/cube.obj");
 	Model lampModel("resources/models/lamp/lamp.obj");	
 	Model sphereModel("resources/models/sphere/sphere.obj");	
 	Model torusModel("resources/models/torus/torus.obj");	
 	Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");	
 
-	glm::mat4 model;
-	//model = glm::rotate(model, 45.0f, glm::vec3(0, 1, 0));
+	glm::mat4 model;	
 	model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
 	model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
 	nanosuitModel.setModelMatrix(model);
@@ -140,7 +163,7 @@ int main()
 	glBindVertexArray(0);
 
 	vector<const GLchar*> faces;
-	/*	
+	
 	faces.push_back("resources/textures/cubemap/posx.tga");
 	faces.push_back("resources/textures/cubemap/negx.tga");
 	faces.push_back("resources/textures/cubemap/posy.tga");
@@ -148,7 +171,7 @@ int main()
 	faces.push_back("resources/textures/cubemap/posz.tga");
 	faces.push_back("resources/textures/cubemap/negz.tga");
 	GLuint cubemapTexture = loadCubemap(faces);
-	*/
+	
 
 	faces.clear();
 	faces.push_back("resources/textures/waterbox/posx.jpg");
@@ -160,7 +183,7 @@ int main()
 	GLuint watermapTexture = loadCubemap(faces);
 
 	skyboxTextures.push_back(watermapTexture);
-	//skyboxTextures.push_back(cubemapTexture);
+	skyboxTextures.push_back(cubemapTexture);
 	
 
 	glEnable(GL_DEPTH_TEST);
@@ -191,11 +214,8 @@ int main()
 		glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 
 
-		//Shader shader = simpleShader;
-		Shader shader = sphereMapShader;
-		if (bumpMapActive) {
-			shader = normalShader;
-		}
+		Shader shader = shaders[currentShaderIndex];
+
 		// Activate shader
 		shader.Use();
 
@@ -258,16 +278,29 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
-	}else if (key == GLFW_KEY_N && action == GLFW_PRESS) {
-		bumpMapActive = !bumpMapActive;
-	}
-	else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
+	}	else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
 		currentModelIndex = (currentModelIndex + 1) % models.size();
 	} else if (key == GLFW_KEY_C && action == GLFW_PRESS) {
 		currentSkyboxIndex = (currentSkyboxIndex + 1) % skyboxTextures.size();
 	} else if (key == GLFW_KEY_M && action == GLFW_PRESS) {
-		//cubemapActive = !cubemapActive;
+		currentShaderIndex = (currentShaderIndex + 1) % shaders.size();
 	}
+	else if (key == GLFW_KEY_1 && action == GLFW_PRESS) {	
+		glm::mat4 m = models[currentModelIndex].getModelMatrix();
+		m = glm::rotate(m, 10.0f, glm::vec3(1, 0, 0));
+		models[currentModelIndex].setModelMatrix(m);
+
+	} else if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+		glm::mat4 m = models[currentModelIndex].getModelMatrix();
+		m = glm::rotate(m, 10.0f, glm::vec3(0, 1, 0));
+		models[currentModelIndex].setModelMatrix(m);
+
+	}	else if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
+		glm::mat4 m = models[currentModelIndex].getModelMatrix();
+		m = glm::rotate(m, 10.0f, glm::vec3(0, 0, 1));
+		models[currentModelIndex].setModelMatrix(m);
+	}
+
 	if (key >= 0 && key < 1024)
 	{
 		if (action == GLFW_PRESS)
