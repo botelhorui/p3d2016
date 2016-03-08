@@ -132,6 +132,7 @@ int main()
 	Model sphereModel("resources/models/sphere/sphere.obj");	
 	Model torusModel("resources/models/torus/torus.obj");	
 	Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");	
+	Model sphere2Model("resources/models/sphere2/sphere.obj");
 
 	glm::mat4 model;	
 	model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
@@ -141,7 +142,7 @@ int main()
 	models.push_back(cubeModel);
 	models.push_back(torusModel);
 	models.push_back(sphereModel);
-	models.push_back(nanosuitModel);
+	models.push_back(sphere2Model);
 	// TODO import other formats
 
 	// Draw in wireframe
@@ -172,7 +173,7 @@ int main()
 	faces.push_back("resources/textures/cubemap/negz.tga");
 	GLuint cubemapTexture = loadCubemap(faces);
 	
-
+	
 	faces.clear();
 	faces.push_back("resources/textures/waterbox/posx.jpg");
 	faces.push_back("resources/textures/waterbox/negx.jpg");
@@ -189,6 +190,11 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	GLint sphereTexture = TextureFromFile("spheremap.JPG", "resources/textures");
+	glBindTexture(GL_TEXTURE_2D, sphereTexture);
+	// Parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Game loop
 	while (!glfwWindowShouldClose(window))

@@ -15,5 +15,5 @@ uniform sampler2D sphereMap;
 
 void main()
 {    
-    color = texture(sphereMap, fs_in.SphereTexCoords);
+    color = texture(sphereMap, vec2(fs_in.SphereTexCoords.x, 1 - fs_in.SphereTexCoords.y));
 }

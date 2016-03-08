@@ -22,14 +22,18 @@ D - camera strafe right
 SPACE - camera move up
 Z - camera move down
 
+1 - Rotate at X axis
+2 - Rotate at Y axis
+3 - Rotate at Z axis
+
 O - change current object
-N - activate/desactivate normal bumping
+N - change shader(phong, textured, cube mapping, sphere mapping)
 C - change current skybox
 
 ___________________________________________
 DESCRIPTION
 
-Includes four objects: cube, torus, sphere, nanosuit;
+Includes four objects: cube, torus, sphere, high resolution sphere, nanosuit;
 The first three share the same texture and normal map.
 Includes two skyboxes: grand canion and ocean.
 

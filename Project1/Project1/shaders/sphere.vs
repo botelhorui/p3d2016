@@ -21,10 +21,11 @@ void main()
 {
     gl_Position = projection * view * model * vec4(position, 1.0f);
     vs_out.FragPos = vec3(model * vec4(position, 1.0f));
-    vs_out.Normal = mat3(transpose(inverse(model))) * normal;
-    vec3 u = vs_out.FragPos - viewPos;
-    vec3 n = vs_out.Normal;
-    vec3 r = reflect(-u, n);
+    //vs_out.Normal = mat3(transpose(inverse(model))) * normal;
+	vs_out.Normal = mat3(inverse(transpose(view * model))) * normal;
+    vec3 u = normalize(vec3(view * model * vec4(position, 1.0)));
+    vec3 n = normalize(vs_out.Normal);
+    vec3 r = reflect(u, n);
     float m = 2.0 * sqrt(r.x * r.x + r.y * r.y + (r.z + 1.0) * (r.z + 1.0));
     vs_out.SphereTexCoords = vec2(r.x/m + 0.5, r.y/m + 0.5);
     vs_out.TexCoords = texCoords;
