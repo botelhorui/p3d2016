@@ -226,11 +226,11 @@ int main()
 		shader.Use();
 
 		// Set skybox
-		/*
+		
 		glActiveTexture(GL_TEXTURE0+3);
 		glUniform1i(glGetUniformLocation(shader.Program, "skybox"), 3);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextures[currentSkyboxIndex]);
-		*/
+			
 		glActiveTexture(GL_TEXTURE0 + 3);
 		glUniform1i(glGetUniformLocation(shader.Program, "sphereMap"), 3);
 		glBindTexture(GL_TEXTURE_2D, sphereTexture);
@@ -255,6 +255,7 @@ int main()
 		lampModel.Draw(lampShader);
 		
 		// draw skybox
+		
 		glDepthFunc(GL_LEQUAL);  // Change depth function so depth test passes when values are equal to depth buffer's content
 		skyboxShader.Use();
 		glm::mat4 skyboxView = glm::mat4(glm::mat3(camera.GetViewMatrix()));
@@ -267,7 +268,7 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS); // Set depth function back to default	
-
+		
 		// Swap the screen buffers
 		glfwSwapBuffers(window);
 	}
