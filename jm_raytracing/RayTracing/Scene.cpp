@@ -3,6 +3,8 @@
 #include <string>
 #include <sstream>
 
+#include "Constants.h"
+
 // Camera
 int Camera::GetResX() {
 	return ResX;
@@ -36,9 +38,9 @@ void CalculateCameraParameters(Camera *camera) {
 	result = camera->eye - camera->at;
 	length = result.Length();
 
-	camera->h = 2.0f * length * tanf(camera->fovy/2.0f);
+	camera->h = 2.0f * length * tanf(DEGREES_TO_RADIANS * camera->fovy/2.0f);
 	camera->w = camera->h * camera->ResX/camera->ResY;
-
+/**/
 	camera->ze = (1.0f / length) * result;
 	camera->ze = camera->ze.Normalized();
 
@@ -51,6 +53,7 @@ void CalculateCameraParameters(Camera *camera) {
 	//length = result.Length();
 	camera->ye = result;
 	camera->ye = camera->ye.Normalized();
+/**/
 }
 
 bool Scene::LoadSceneNFF(std::string sceneName) {

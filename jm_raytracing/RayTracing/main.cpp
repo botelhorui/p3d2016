@@ -70,6 +70,7 @@ int WindowHandle = 0;
 Ray CalculatePrimaryRay(int x, int y) {
 	Ray ray;
 	float d;// , u, v;
+	//float u, v;
 	vec3 aux, direction;
 
 	//u = 0.0f + ((float)resX - 0.0f) * (((float)x + 0.5f) / (float)resX);
@@ -81,13 +82,11 @@ Ray CalculatePrimaryRay(int x, int y) {
 	d = aux.Length();
 
 	//direction = -d * scene->GetCamera()->ze + u * scene->GetCamera()->ye + v * scene->GetCamera()->xe;
-	direction = -d * scene->GetCamera()->ze + scene->GetCamera()->h * (y / resY - 0.5f) * scene->GetCamera()->ye + scene->GetCamera()->w * (x / resX - 0.5f) * scene->GetCamera()->xe;
+	direction = -d * scene->GetCamera()->ze + scene->GetCamera()->h * ((float)y / (float)resY - 0.5f) * scene->GetCamera()->ye + scene->GetCamera()->w * ((float)x / (float)resX - 0.5f) * scene->GetCamera()->xe;
 	direction = direction.Normalized();
 
 	ray.origin = scene->GetCamera()->eye;
 	ray.direction = direction;
-
-	//std::cout << "Direction: " << ray.direction << "\n\n";
 
 	return ray;
 }
@@ -152,6 +151,7 @@ Color RayTracing(Ray ray, int depth, float refractionIndex){
 		else if (object.type == kObjectSphere){
 			squareDistance = powf((object.center.x - ray.origin.x), 2) + powf((object.center.y - ray.origin.y), 2) + powf((object.center.z - ray.origin.z), 2);
 			squareRadius = powf(object.radius, 2);
+
 			if (squareDistance == squareRadius){
 				printf("Square distance: %.4f - Square radius: %.4f\n", squareDistance, squareRadius);
 				continue;
@@ -168,15 +168,16 @@ Color RayTracing(Ray ray, int depth, float refractionIndex){
 			}
 
 			sphereR = powf(sphereB, 2) - squareDistance + squareRadius;
-
+/** /
 			printf("Square distance: %.4f\n", squareDistance);
 			printf("Square radius: %.4f\n", squareRadius);
 			printf("B: %.4f\n", sphereB);
 			printf("R: %.4f\n", sphereR);
 			printf("\n");
-
+/**/
 			if (sphereR < 0)
 			{
+				//printf("R inferior a 0.\n");
 				continue;
 			}
 
