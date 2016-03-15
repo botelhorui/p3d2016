@@ -1,0 +1,571 @@
+ ///////////////////////////////////////////////////////////////////////
+//
+// P3D Course
+// (c) 2016 by João Madeiras Pereira
+// TEMPLATE: Whitted Ray Tracing NFF scenes and drawing points with Modern OpenGL
+//
+//You should develop your rayTracing( Ray ray, int depth, float RefrIndex) which returns a color and
+// to develop your load_NFF function
+//
+///////////////////////////////////////////////////////////////////////
+
+#include <stdlib.h>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <stdio.h>
+
+#include "OpenGL\glew\glew.h"
+#include "OpenGL\freeglut\freeglut.h"
+
+#include "Scene.h"
+#include "vectors.h"
+
+#define CAPTION "ray tracer"
+
+#define VERTEX_COORD_ATTRIB 0
+#define COLOR_ATTRIB 1
+
+#define MAX_DEPTH 6
+
+using namespace JMVector;
+
+// Structures
+
+typedef struct Color {
+	float r = 0;
+	float g = 0;
+	float b = 0;
+} Color;
+
+typedef struct Ray {
+	vec3 direction;
+	vec3 origin;
+}Ray;
+
+// Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
+float *colors;
+float *vertices;
+
+int size_vertices;
+int size_colors;
+
+GLfloat m[16];  //projection matrix initialized by ortho function
+
+GLuint VaoId;
+GLuint VboId[2];
+
+GLuint VertexShaderId, FragmentShaderId, ProgramId;
+GLint UniformId;
+
+Scene *scene = NULL;
+int resX, resY;
+
+/* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
+int draw_mode = 1;
+
+int WindowHandle = 0;
+
+///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
+Ray CalculatePrimaryRay(int x, int y) {
+	Ray ray;
+	float d;// , u, v;
+	vec3 aux, direction;
+
+	//u = 0.0f + ((float)resX - 0.0f) * (((float)x + 0.5f) / (float)resX);
+	//v = 0.0f + ((float)resY - 0.0f) * (((float)y + 0.5f) / (float)resY);
+	//u = -(resX / 2.0f) + ((float)resX) * (((float)x + 0.5f) / (float)resX);
+	//v = -(resY / 2.0f) + ((float)resY) * (((float)y + 0.5f) / (float)resY);
+
+	aux = scene->GetCamera()->eye - scene->GetCamera()->at;
+	d = aux.Length();
+
+	//direction = -d * scene->GetCamera()->ze + u * scene->GetCamera()->ye + v * scene->GetCamera()->xe;
+	direction = -d * scene->GetCamera()->ze + scene->GetCamera()->h * (y / resY - 0.5f) * scene->GetCamera()->ye + scene->GetCamera()->w * (x / resX - 0.5f) * scene->GetCamera()->xe;
+	direction = direction.Normalized();
+
+	ray.origin = scene->GetCamera()->eye;
+	ray.direction = direction;
+
+	//std::cout << "Direction: " << ray.direction << "\n\n";
+
+	return ray;
+}
+
+Color RayTracing(Ray ray, int depth, float refractionIndex){
+//Color RayTracing(Ray ray, int depth){
+	Color color;
+	float currentDistance = -1.0f, shortestDistance = -1.0f;
+	int currentObject = -1, intersectionObject = -1;
+	// Sphere
+	float squareDistance, squareRadius, sphereB, sphereR;
+
+	for each (Object object in scene->objects){
+		currentObject++;
+
+		if (object.type == kObjectPlane){
+			vec3 auxLeft = object.vertices[2] - object.vertices[1];
+			vec3 auxRight = object.vertices[1] - object.vertices[0];
+			vec3 normal = auxLeft.Cross(auxRight);
+			normal = normal.Normalized();
+			//std::cout << "Normal: " << normal << "\n";
+/** /
+			ray = origin + direction * t
+			ray = r(t), R(T)
+			origin = p, R0
+			direction = v, Rd
+/** /
+			Let r(t) = p + v * t be the equation of the ray.
+			Let n be the plane normal and q be a point on the plane.
+			Then any point x on the plane satisfies the equation
+
+				n.(q - x) = 0
+
+			So substitute the ray equation r(t) in for x and solve for t:
+			r(t) = p + v * t
+			n.(q - r(t)) = 0
+			n.(q - p - v * t) = 0
+			n.(q - p) = (n.v) * t
+			t = [n.(q - p)] / (n.v)
+
+			Then plug t back into the ray equation to find the point of intersection.
+/**/
+			if (normal.Dot(ray.direction) != 0){ // Raio paralelo ao plano (perpendicular à normal)
+				currentDistance = -(normal.Dot(ray.origin) - normal.Dot(object.vertices[0])) / (normal.Dot(ray.direction));
+				//currentDistance = (normal.Dot(object.vertices[0]) - normal.Dot(ray.origin)) / (normal.Dot(ray.direction));
+				//printf("Current distance: %.3f\n", currentDistance);
+
+				if (currentDistance > 0){
+					if (shortestDistance < 0){
+						shortestDistance = currentDistance;
+						//printf("Shortest distance: %.3f\n", shortestDistance);
+						intersectionObject = currentObject;
+					}
+					else if (currentDistance < shortestDistance){
+						shortestDistance = currentDistance;
+						//printf("Shortest distance: %.3f\n", shortestDistance);
+						intersectionObject = currentObject;
+					}
+				}
+			}
+		}
+		else if (object.type == kObjectSphere){
+			squareDistance = powf((object.center.x - ray.origin.x), 2) + powf((object.center.y - ray.origin.y), 2) + powf((object.center.z - ray.origin.z), 2);
+			squareRadius = powf(object.radius, 2);
+			if (squareDistance == squareRadius){
+				printf("Square distance: %.4f - Square radius: %.4f\n", squareDistance, squareRadius);
+				continue;
+			}
+
+			sphereB = ray.direction.x * (object.center.x - ray.origin.x) + ray.direction.y * (object.center.y - ray.origin.y) + ray.direction.z * (object.center.z - ray.origin.z);
+			//sphereB = ray.origin.x * (object.center.x - ray.direction.x) + ray.origin.y * (object.center.y - ray.direction.y) + ray.origin.z * (object.center.z - ray.direction.z);
+
+			if (squareDistance > squareRadius){
+				if (sphereB < 0){
+					printf("Ray not pointing to sphere.\n");
+					continue;
+				}
+			}
+
+			sphereR = powf(sphereB, 2) - squareDistance + squareRadius;
+
+			printf("Square distance: %.4f\n", squareDistance);
+			printf("Square radius: %.4f\n", squareRadius);
+			printf("B: %.4f\n", sphereB);
+			printf("R: %.4f\n", sphereR);
+			printf("\n");
+
+			if (sphereR < 0)
+			{
+				continue;
+			}
+
+			if (squareDistance > squareRadius){
+				currentDistance = sphereB - sqrtf(sphereR);
+			}
+			else{
+				currentDistance = sphereB + sqrtf(sphereR);
+			}
+
+			if (shortestDistance < 0){
+				shortestDistance = currentDistance;
+				intersectionObject = currentObject;
+			}
+			else if (currentDistance < shortestDistance){
+				shortestDistance = currentDistance;
+				intersectionObject = currentObject;
+			}
+		}
+	}
+
+	if (scene->objects[intersectionObject].type == kObjectSphere){
+		printf("Object intersected: %d\n", intersectionObject);
+	}
+
+	if (intersectionObject == -1){
+		color.r = scene->GetColorBackground().x;
+		color.g = scene->GetColorBackground().y;
+		color.b = scene->GetColorBackground().z;
+	}
+	else{
+		color.r = scene->objects[intersectionObject].material.red;
+		color.g = scene->objects[intersectionObject].material.green;
+		color.b = scene->objects[intersectionObject].material.blue;
+	}
+
+/** /	
+	for each object in the scene
+		compute intersection ray - object;
+	store the closest intersection;
+	if there is an intersection
+		shade the pixel using color, lights, materials;
+	else // ray misses all objects
+		shade the pixel with background color
+/** /
+	//intersect ray with all objects and find a hit point(if any) closest to the start of the ray 
+	if (!intersection point) {
+		return BACKGROUND;
+	}
+	else {
+		color = object material’s ambient color; compute normal at the hit point;
+		for (each source light) {
+			L = unit light vector from hit point to light source; if (L • normal>0)
+				if (!point in shadow); //trace shadow ray color += diffuse color + specular color;
+		}
+		if (depth >= MAX_DEPTH) {
+			return color;
+		}
+		if (reflective object) {
+			rRay = calculate ray in the reflected direction;
+			rColor = trace(scene, point, rRay direction, depth + 1);
+			reduce rColor by the specular reflection coefficient and add to color;
+		}
+		if (translucid object) {
+			tRay = calculate ray in the refracted direction;
+			tColor = trace(scene, point, tRay direction, depth + 1);
+			reduce tColor by the transmittance coefficient and add to color;
+		}
+
+/**/
+		return color;
+}
+/////////////////////////////////////////////////////////////////////// ERRORS
+
+bool isOpenGLError() {
+	bool isError = false;
+	GLenum errCode;
+	const GLubyte *errString;
+	while ((errCode = glGetError()) != GL_NO_ERROR) {
+		isError = true;
+		errString = gluErrorString(errCode);
+		std::cerr << "OpenGL ERROR [" << errString << "]." << std::endl;
+	}
+	return isError;
+}
+
+void checkOpenGLError(std::string error)
+{
+	if(isOpenGLError()) {
+		std::cerr << error << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+/////////////////////////////////////////////////////////////////////// SHADERs
+const GLchar* VertexShader =
+{
+	"#version 330 core\n"
+
+	"in vec2 in_Position;\n"
+	"in vec3 in_Color;\n"
+	"uniform mat4 Matrix;\n"
+	"out vec4 color;\n"
+
+	"void main(void)\n"
+	"{\n"
+	"	vec4 position = vec4(in_Position, 0.0, 1.0);\n"
+	"	color = vec4(in_Color, 1.0);\n"
+	"	gl_Position = Matrix * position;\n"
+
+	"}\n"
+};
+
+const GLchar* FragmentShader =
+{
+	"#version 330 core\n"
+
+	"in vec4 color;\n"
+	"out vec4 out_Color;\n"
+
+	"void main(void)\n"
+	"{\n"
+	"	out_Color = color;\n"
+	"}\n"
+};
+
+void createShaderProgram()
+{
+	VertexShaderId = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(VertexShaderId, 1, &VertexShader, 0);
+	glCompileShader(VertexShaderId);
+
+	FragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(FragmentShaderId, 1, &FragmentShader, 0);
+	glCompileShader(FragmentShaderId);
+
+	ProgramId = glCreateProgram();
+	glAttachShader(ProgramId, VertexShaderId);
+	glAttachShader(ProgramId, FragmentShaderId);
+
+	glBindAttribLocation(ProgramId, VERTEX_COORD_ATTRIB, "in_Position");
+	glBindAttribLocation(ProgramId, COLOR_ATTRIB, "in_Color");
+	
+	glLinkProgram(ProgramId);
+	UniformId = glGetUniformLocation(ProgramId, "Matrix");
+
+	checkOpenGLError("ERROR: Could not create shaders.");
+}
+
+void destroyShaderProgram()
+{
+	glUseProgram(0);
+	glDetachShader(ProgramId, VertexShaderId);
+	glDetachShader(ProgramId, FragmentShaderId);
+
+	glDeleteShader(FragmentShaderId);
+	glDeleteShader(VertexShaderId);
+	glDeleteProgram(ProgramId);
+
+	checkOpenGLError("ERROR: Could not destroy shaders.");
+}
+/////////////////////////////////////////////////////////////////////// VAOs & VBOs
+void createBufferObjects()
+{
+	glGenVertexArrays(1, &VaoId);
+	glBindVertexArray(VaoId);
+	glGenBuffers(2, VboId);
+	glBindBuffer(GL_ARRAY_BUFFER, VboId[0]);
+
+	/* Não é necessário fazer glBufferData, ou seja o envio dos pontos para a placa gráfica pois isso 
+	é feito na drawPoints em tempo de execução com GL_DYNAMIC_DRAW */
+
+	glEnableVertexAttribArray(VERTEX_COORD_ATTRIB);
+	glVertexAttribPointer(VERTEX_COORD_ATTRIB, 2, GL_FLOAT, 0, 0, 0);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, VboId[1]);
+	glEnableVertexAttribArray(COLOR_ATTRIB);
+	glVertexAttribPointer(COLOR_ATTRIB, 3, GL_FLOAT, 0, 0, 0);
+	
+// unbind the VAO
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDisableVertexAttribArray(VERTEX_COORD_ATTRIB);
+	glDisableVertexAttribArray(COLOR_ATTRIB);
+	checkOpenGLError("ERROR: Could not create VAOs and VBOs.");
+}
+
+void destroyBufferObjects()
+{
+	glDisableVertexAttribArray(VERTEX_COORD_ATTRIB);
+	glDisableVertexAttribArray(COLOR_ATTRIB);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	glDeleteBuffers(1, VboId);
+	glDeleteVertexArrays(1, &VaoId);
+	checkOpenGLError("ERROR: Could not destroy VAOs and VBOs.");
+}
+
+void drawPoints()
+{
+	glBindVertexArray(VaoId);
+	glUseProgram(ProgramId);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VboId[0]);
+	glBufferData(GL_ARRAY_BUFFER, size_vertices, vertices, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, VboId[1]);
+	glBufferData(GL_ARRAY_BUFFER, size_colors, colors, GL_DYNAMIC_DRAW);
+
+	glUniformMatrix4fv(UniformId, 1, GL_FALSE, m);
+	glDrawArrays(GL_POINTS, 0, resX * resY);
+	glFinish();
+
+	glUseProgram(0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	checkOpenGLError("ERROR: Could not draw scene.");
+}
+
+/////////////////////////////////////////////////////////////////////// CALLBACKS
+
+// Render function by primary ray casting from the eye towards the scene's objects
+
+void renderScene(){
+	int index_pos=0;
+	int index_col=0;
+
+	Color color;
+	Ray ray;
+
+	for (int y = 0; y < resY; y++){
+		for (int x = 0; x < resX; x++){
+		    //YOUR 2 FUNTIONS: 
+			ray = CalculatePrimaryRay(x, y);
+			color = RayTracing(ray, 1, 1.0f);
+
+			vertices[index_pos++]= (float)x;
+			vertices[index_pos++]= (float)y;
+			colors[index_col++]= (float)color.r;
+			colors[index_col++]= (float)color.g;
+			colors[index_col++]= (float)color.b;	
+
+			if(draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
+				drawPoints();
+				index_pos=0;
+				index_col=0;
+			}
+		}
+/** /
+		printf("Line %d\n", y);
+		std::cout << "Ray origin: " << ray.origin << "\n";
+		std::cout << "Ray direction: " << ray.direction << "\n\n";
+/**/
+		if(draw_mode == 1) {  // desenhar o conteúdo da janela linha a linha
+				drawPoints();
+				index_pos=0;
+				index_col=0;
+/**/
+		}
+	}
+
+	if(draw_mode == 2) //preenchar o conteúdo da janela com uma imagem completa
+		 drawPoints();
+	printf("Terminou!\n"); 	
+}
+
+void cleanup(){
+	destroyShaderProgram();
+	destroyBufferObjects();
+}
+
+void ortho(float left, float right, float bottom, float top, float nearp, float farp){
+	m[0 * 4 + 0] = 2 / (right - left);
+	m[0 * 4 + 1] = 0.0;
+	m[0 * 4 + 2] = 0.0;
+	m[0 * 4 + 3] = 0.0;
+	m[1 * 4 + 0] = 0.0;
+	m[1 * 4 + 1] = 2 / (top - bottom);
+	m[1 * 4 + 2] = 0.0;
+	m[1 * 4 + 3] = 0.0;
+	m[2 * 4 + 0] = 0.0;
+	m[2 * 4 + 1] = 0.0;
+	m[2 * 4 + 2] = -2 / (farp - nearp);
+	m[2 * 4 + 3] = 0.0;
+	m[3 * 4 + 0] = -(right + left) / (right - left);
+	m[3 * 4 + 1] = -(top + bottom) / (top - bottom);
+	m[3 * 4 + 2] = -(farp + nearp) / (farp - nearp);
+	m[3 * 4 + 3] = 1.0;
+}
+
+void reshape(int w, int h){
+    glClear(GL_COLOR_BUFFER_BIT);
+	glViewport(0, 0, w, h);
+	ortho(0, (float)resX, 0, (float)resY, -1.0, 1.0);
+}
+
+/////////////////////////////////////////////////////////////////////// SETUP
+void setupCallbacks() {
+	glutCloseFunc(cleanup);
+	glutDisplayFunc(renderScene);
+	glutReshapeFunc(reshape);
+}
+
+void setupGLEW() {
+	glewExperimental = GL_TRUE;
+	GLenum result = glewInit() ; 
+	if (result != GLEW_OK) { 
+		std::cerr << "ERROR glewInit: " << glewGetString(result) << std::endl;
+		exit(EXIT_FAILURE);
+	} 
+	GLenum err_code = glGetError();
+	printf ("Vendor: %s\n", glGetString (GL_VENDOR));
+	printf ("Renderer: %s\n", glGetString (GL_RENDERER));
+	printf ("Version: %s\n", glGetString (GL_VERSION));
+	printf ("GLSL: %s\n", glGetString (GL_SHADING_LANGUAGE_VERSION));
+}
+
+void setupGLUT(int argc, char* argv[]){
+	glutInit(&argc, argv);
+	
+	glutInitContextVersion(3, 3);
+	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
+	glutInitContextProfile(GLUT_CORE_PROFILE);
+
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+	
+	glutInitWindowPosition(640,100);
+	glutInitWindowSize(resX, resY);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);
+	glDisable(GL_DEPTH_TEST);
+	WindowHandle = glutCreateWindow(CAPTION);
+	if(WindowHandle < 1) {
+		std::cerr << "ERROR: Could not create a new rendering window." << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+void init(int argc, char* argv[])
+{
+	setupGLUT(argc, argv);
+	setupGLEW();
+	std::cerr << "CONTEXT: OpenGL v" << glGetString(GL_VERSION) << std::endl;
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	createShaderProgram();
+	createBufferObjects();
+	setupCallbacks();
+}
+
+int main(int argc, char* argv[]){
+    //INSERT HERE YOUR CODE FOR PARSING NFF FILES
+	scene = new Scene();
+
+	if (!(scene->LoadSceneNFF("scene1.nff"))) {
+		return 0;
+	}
+
+	resX = scene->GetCamera()->GetResX();
+	resY = scene->GetCamera()->GetResY();
+
+	if(draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
+		size_vertices = 2 * sizeof(float);
+		size_colors = 3 * sizeof(float);
+		printf("DRAWING MODE: POINT BY POINT\n");
+	}
+	else if(draw_mode == 1) { // desenhar o conteúdo da janela linha a linha
+		size_vertices = 2 * resX * sizeof(float);
+		size_colors = 3 * resX * sizeof(float);
+		printf("DRAWING MODE: LINE BY LINE\n");
+	}
+	else if(draw_mode == 2) { // preencher o conteúdo da janela com uma imagem completa
+		size_vertices = 2 * resX * resY * sizeof(float);
+		size_colors = 3 * resX * resY * sizeof(float);
+		printf("DRAWING MODE: FULL IMAGE\n");
+	}
+	else {
+		printf("Draw mode not valid \n");
+		exit(0);
+	}
+	printf("resx = %d  resy= %d.\n", resX, resY);
+
+	vertices = (float*)malloc(size_vertices);
+    if (vertices==NULL) exit (1);
+
+	colors = (float*)malloc(size_colors);
+    if (colors==NULL) exit (1);
+
+	init(argc, argv);
+	glutMainLoop();	
+	exit(EXIT_SUCCESS);
+}
+///////////////////////////////////////////////////////////////////////
