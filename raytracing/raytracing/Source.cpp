@@ -335,14 +335,11 @@ void init(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	if (scene.load_nff("scene.nff")) {
+	if (!scene.load_nff("scene.nff")) {
+		printf("failed to loat nff\n");
 		system("pause");
-		return 0;
+		return 1;
 	}
-	//DEV
-	printf("finished loading\n");
-	system("pause");
-	return 0;
 
 	RES_X = scene.camera.getResX();
 	RES_Y = scene.camera.getResY();
