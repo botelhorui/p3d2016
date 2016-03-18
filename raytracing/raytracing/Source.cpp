@@ -18,6 +18,8 @@
 #include <OpenGL/glew/glew.h>
 #include <OpenGL/freeglut/freeglut.h>
 
+#include <omp.h>
+
 #include "scene.h"
 
 #define CAPTION "ray tracer"
@@ -26,6 +28,8 @@
 #define COLOR_ATTRIB 1
 
 #define MAX_DEPTH 6
+
+#define RAY_TRACING_DEPTH 2
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -205,19 +209,28 @@ void drawPoints()
 /////////////////////////////////////////////////////////////////////// CALLBACKS
 
 // Render function by primary ray casting from the eye towards the scene's objects
-
+bool alreadyRendered = false;
 void renderScene()
 {
+	if (alreadyRendered) {
+		return;
+	}
+	else {
+		alreadyRendered = true;
+	}
 	int index_pos=0;
 	int index_col=0;
 	vec3 color;
 	Ray ray;
-	for (int y = 0; y < RES_Y; y++)
+	int y, x;
+	for (y = 0; y < RES_Y; y++)
+	//for (y = 100; y < 400; y++)
 	{
-		for (int x = 0; x < RES_X; x++)
+		for (x = 0; x < RES_X; x++)
+		//for (x = 100; x < 400; x++)
 		{		    
 			ray = scene.calculatePrimaryRay(x, y);
-			color = scene.rayTracing(ray, 1, 1.0 );
+			color = scene.rayTracing(ray, RAY_TRACING_DEPTH, 1.0 );
 
 			vertices[index_pos++]= (float)x;
 			vertices[index_pos++]= (float)y;
@@ -231,7 +244,7 @@ void renderScene()
 				index_col=0;
 			}
 		}
-		printf("line %d", y);
+		//printf("line %d\n", y);
 		if(draw_mode == 1) {  // desenhar o conteúdo da janela linha a linha
 				drawPoints();
 				index_pos=0;
@@ -341,8 +354,8 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	RES_X = scene.camera.getResX();
-	RES_Y = scene.camera.getResY();
+	RES_X = scene.camera.resX;
+	RES_Y = scene.camera.resY;
 
 	if(draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
 		size_vertices = 2*sizeof(float);
