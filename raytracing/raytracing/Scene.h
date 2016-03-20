@@ -12,7 +12,7 @@ using namespace std;
 using namespace glm;
 
 #define EPSILON 0.001f
-
+#define PI 3.14159265
 istream &operator>>(istream &i, vec3 &v){
 	 
 	i >> v.x >> v.y >> v.z;	
@@ -245,7 +245,8 @@ public:
 		float df, h, w;
 		vec3 xe, ye, ze;				
 		df = (float)(camera.from - camera.at).length();
-		h = 2 * df * tan(camera.angle / 2.0f);
+		float angle = (PI / 180.0f)*(camera.angle / 2.0f);
+		h = 2 * df * tan(angle);
 		w = (camera.resX * h) / camera.resY;
 		ze = (camera.from - camera.at) / df;
 		xe = normalize(cross(camera.up, ze));
@@ -261,54 +262,56 @@ public:
 	vec3 getColor(vec3 viewDir, Material material, vec3 point, vec3 normal) {
 		// multiple lights sources
 		vec3 lcolor(0, 0, 0);
-		vec3 Kd = material.color * material.Kd;
-		vec3 Ks = material.color *  material.Ks;
 		for (auto & l: lights) {
 			// shadow feelers
-			// for each light calculate ray call rayTracing
+			// for each light calculate ray and call rayTracing
 			Ray r;
 			r.o = point;
 			r.d = normalize(l.pos - r.o);
 			if (isShadow(r,l)) {
 				continue;
 			}
-			// else calculate bling phong color
-			vec3 lightDir = normalize(l.pos - point);			
-			float lambertian = dot(lightDir, normal);
-			if (lambertian < 0) continue;
-			vec3 halfDir = normalize(lightDir + viewDir);
-			float spec = glm::max(0.0f, dot(halfDir, normal));
-			vec3 diffuse = l.color * Kd * lambertian;
-			vec3 specular = l.color * Ks * pow(spec, material.Shine);
-			lcolor += diffuse;
-			lcolor += specular;
-		}	
+			// if light is not blocked. calculate bling phong color
 
-		//lcolor += backgroundColor * Kd;
+			// ambient component (it is not defined in the nff file
+
+
+			// diffuse component
+			vec3 lightDir = normalize(l.pos - point);			
+			float lambertian = glm::max(0.0f, dot(lightDir, normal));
+			vec3 diffuse = material.color * (material.Kd * lambertian);
+			lcolor += diffuse;
+
+			// specular component
+			vec3 halfDir = normalize(lightDir + viewDir);
+			float spec = glm::max(0.0f, dot(halfDir, normal));		
+			vec3 specular = vec3(1,1,1) * (material.Ks * pow(spec, material.Shine));			
+			lcolor += specular;
+			
+		}	
+		//lcolor += material.color;
 		return lcolor;
 	}
 
 	bool isShadow(Ray &ray, Light& l) {
 		float lrdist = (l.pos - ray.o).length();
 		float minDist = numeric_limits<float>::max();
-		for (auto const& pl : planes) {
-			vec3 intersection, normal;
+		vec3 intersection, normal;
+		for (auto const& pl : planes) {			
 			float dist = pl.intersectDistance(ray, minDist, intersection, normal);
-			if (dist >= EPSILON && dist < lrdist) {
+			if (dist >= 0 && dist < lrdist) {
 				return true;
 			}			
 		}
-		for (auto const& s : spheres) {
-			vec3 intersection, normal;
+		for (auto const& s : spheres) {		
 			float dist = s.intersectDistance(ray, minDist, intersection, normal);
-			if (dist >= EPSILON && dist < lrdist) {
+			if (dist >= 0 && dist < lrdist) {
 				return true;
 			}
 		}
-		for (auto const& t : triangles) {
-			vec3 intersection, normal;
+		for (auto const& t : triangles) {			
 			float dist = t.intersectDistance(ray, minDist, intersection, normal);
-			if (dist >= EPSILON && dist < lrdist) {
+			if (dist >= 0 && dist < lrdist) {
 				return true;
 			}
 		}
@@ -364,26 +367,61 @@ public:
 
 	vec3 rayTracing(Ray ray, int depth, float RefrIndex) {
 		if (depth == 0) {
-			return backgroundColor;
+			return vec3(0,0,0);
 		}
 		float minDist;
-		vec3 minIntersection;
-		vec3  minNormal;
+		vec3 intersectionPoint;
+		vec3  intersectionNormal;
 		bool found = false;
 		Material material;
-		found = getIntersection(ray, material, minDist, minIntersection, minNormal);		
+		found = getIntersection(ray, material, minDist, intersectionPoint, intersectionNormal);		
 		if (!found) return backgroundColor;
 
-		vec3 viewDir = normalize(ray.o - minIntersection);
-		vec3 reflect = glm::reflect(-viewDir, minNormal);
-		// calculate reflection from other objects
+		// intersection found. compute color:
+		vec3 viewDir = normalize(ray.o - intersectionPoint);
+
+		// from multiple lights sources
+		// localColor	
+		vec3 localColor(0, 0, 0);
+		for (auto & l : lights) {
+			// shadow feelers
+			// for each light calculate ray and call rayTracing
+			Ray r;
+			r.o = intersectionPoint;
+			r.d = normalize(l.pos - r.o);
+			if (isShadow(r, l)) {
+				continue;
+			}
+			// else light is not blocked. calculate bling phong color
+
+			// ambient component (it is not defined in the nff file)
+
+			// diffuse component
+			vec3 lightDir = normalize(l.pos - intersectionPoint);
+			float lambertian = glm::max(0.0f, dot(lightDir, intersectionNormal));
+			vec3 diffuse = material.color * (material.Kd * lambertian);
+			localColor += diffuse;
+
+			// specular component
+			vec3 halfDir = normalize(lightDir + viewDir);
+			float spec = glm::max(0.0f, dot(halfDir, intersectionNormal));
+			vec3 specular = material.color * (material.Ks * pow(spec, material.Shine));
+			localColor += specular;
+		}		
+		if (depth == 1) {
+			return localColor;
+		}
+		// diffuse color from reflected ray
+		vec3 reflect = glm::reflect(-viewDir, intersectionNormal);
 		Ray reflectRay;
-		reflectRay.o = minIntersection;
+		reflectRay.o = intersectionPoint;
 		reflectRay.d = normalize(reflect);
-		vec3 reflectColor = rayTracing(reflectRay, depth - 1, RefrIndex);
-		// localColor		
-		vec3 localColor = getColor(viewDir, material, minIntersection, minNormal);
-		// use specular because in image example plane floor does not reflect sphere and Ks is 0
-		return mix(localColor, reflectColor, material.Ks);		
+		// by experimenting Ks is the correct ratio to use............
+		vec3 reflectColor = material.Ks * rayTracing(reflectRay, depth - 1, RefrIndex);
+		
+		vec3 globalColor = localColor + reflectColor;
+		// We use material specular value as the mix percentage, because in example images
+		// the material with Kd == 0 is the only material that has no reflection
+		return  globalColor;
 	}
 };
