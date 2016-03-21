@@ -15,10 +15,10 @@
 #include <string>
 #include <stdio.h>
 
-#include <OpenGL/glew/glew.h>
-#include <OpenGL/freeglut/freeglut.h>
+#include <GL/glew.h>
+#include <GL/freeglut.h>
 
-#include <omp.h>
+//#include <omp.h>
 
 #include "scene.h"
 
@@ -81,7 +81,7 @@ void checkOpenGLError(std::string error)
 /////////////////////////////////////////////////////////////////////// SHADERs
 const GLchar* VertexShader =
 {
-	"#version 330 core\n"
+	"#version 140\n"
 
 	"in vec2 in_Position;\n"
 	"in vec3 in_Color;\n"
@@ -99,7 +99,7 @@ const GLchar* VertexShader =
 
 const GLchar* FragmentShader =
 {
-	"#version 330 core\n"
+	"#version 140\n"
 
 	"in vec4 color;\n"
 	"out vec4 out_Color;\n"
@@ -112,13 +112,26 @@ const GLchar* FragmentShader =
 
 void createShaderProgram()
 {
+	GLchar buffer[1000];
+	int n=0;
+
 	VertexShaderId = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(VertexShaderId, 1, &VertexShader, 0);
 	glCompileShader(VertexShaderId);
 
+	glGetShaderInfoLog(VertexShaderId, 1000, &n, buffer);
+	printf("%d nc log: %s\n", n, buffer);
+	n = 0;
+
 	FragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(FragmentShaderId, 1, &FragmentShader, 0);
 	glCompileShader(FragmentShaderId);
+	
+	
+	glGetShaderInfoLog(VertexShaderId, 1000, &n, buffer);
+	printf("%d nc log: %s\n", n, buffer);
+	n = 0;
+
 
 	ProgramId = glCreateProgram();
 	glAttachShader(ProgramId, VertexShaderId);
@@ -130,7 +143,13 @@ void createShaderProgram()
 	glLinkProgram(ProgramId);
 	UniformId = glGetUniformLocation(ProgramId, "Matrix");
 
+	glGetProgramInfoLog(ProgramId, 1000, &n, buffer);
+		printf("%d nc log: %s\n", n, buffer);
+		n = 0;
+	
+	
 	checkOpenGLError("ERROR: Could not create shaders.");
+	
 }
 
 void destroyShaderProgram()
@@ -318,7 +337,7 @@ void setupGLUT(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
 	
-	glutInitContextVersion(3, 3);
+	glutInitContextVersion(3,1);
 	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 

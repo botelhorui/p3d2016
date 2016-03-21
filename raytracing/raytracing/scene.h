@@ -1,4 +1,3 @@
-#pragma once
 #include <string>
 #include <vector>
 #include <fstream>
@@ -227,7 +226,7 @@ public:
 				f >> v2;
 				triangles.push_back(Triangle(v0, v1, v2, lastMaterial));
 			}else {
-				printf("load_nff: Unrecognizable '%s' ", type);
+				printf("load_nff: Unrecognizable '%s' ", type.c_str());
 				cin.get();
 				exit(1);
 			}
