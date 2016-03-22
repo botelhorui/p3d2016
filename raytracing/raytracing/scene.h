@@ -2,6 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <limits>
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 #include <glm/vec3.hpp>
@@ -11,7 +12,6 @@ using namespace std;
 using namespace glm;
 
 #define EPSILON 0.001f
-#define PI 3.14159265
 istream &operator>>(istream &i, vec3 &v){
 	 
 	i >> v.x >> v.y >> v.z;	
@@ -58,12 +58,19 @@ public:
 	float index_of_refraction;
 };
 
-class Plane{
+class Object {
+public:
+	Material material;
+	Object(Material mat) : material(mat){}
+	virtual float intersectDistance(const Ray& ray, const float& minDist, vec3& intersection, vec3& normal) const {
+		return -1;
+	};
+};
+class Plane: public Object{
 public:
 	vec3 n;
 	float d;
-	Material material;
-	Plane(vec3 v0, vec3 v1, vec3 v2, Material mat):material(mat) {
+	Plane(vec3 v0, vec3 v1, vec3 v2, Material mat): Object(mat){
 		vec3 s0, s1;
 		s0 = v1 - v0;
 		s1 = v2 - v0;
@@ -87,18 +94,18 @@ public:
 	}
 };
 
-class Sphere{
+class Sphere: public Object{
 public:
 	vec3 pos;
 	float r;
-	Material material;
-	Sphere(vec3 pos, float r, Material mat) : pos(pos), r(r), material(mat) {
+	Sphere(vec3 pos, float r, Material mat) : pos(pos), r(r), Object(mat) {
 	}
 
 	float intersectDistance(const Ray& ray, const float& minDist, vec3& intersection, vec3& normal) const {
 		vec3 diff = (pos - ray.o);
 		float t = -1;
-		float distsquare = dot(diff, diff);
+		float distsquare = glm::length(diff) * glm::length(diff);
+		
 		if (distsquare == r*r) return -1; // ray on the sphere
 		float B = dot(ray.d, diff);
 		if (distsquare > r*r) {
@@ -119,15 +126,89 @@ public:
 	}
 };
 
-class Triangle{
+class Triangle: public Object{
 public:
-	vec3 v0;
-	vec3 v1;
-	vec3 v2;	
-	Material material;
-	Triangle(vec3 v0, vec3 v1, vec3 v2, Material mat) : v0(v0), v1(v1), v2(v2), material(mat) {
+	vec3 V0;
+	vec3 V1;
+	vec3 V2;
+	vec3 normal;
+	// 
+	float d;
+
+
+	Triangle(vec3 v0, vec3 v1, vec3 v2, Material mat) : V0(v0), V1(v1), V2(v2), Object(mat){
+		normal = normalize(cross(v1 - v0, v2 - v0));
+		// for each point P of the plane, P.N is constant
+		d = -dot(v0, normal);
 	}
-	float  intersectDistance(const Ray& ray,const float& minDist,const vec3& intersection, vec3& normal) const {
+	float intersectDistance(const Ray& ray, const float& minDist, vec3& intersection, vec3& normal) const {
+		float NO = dot(ray.o, this->normal);
+		float ND = dot(ray.d, this->normal);
+		if (ND == 0) { // ray parallel to triangle
+			return -1;
+		}
+		float t = (-d -NO) / ND;
+		if (t < 0.0f) { // triangle behind ray
+			return -1;
+		}
+		if (minDist < t) { // a closed intersection has already been found
+			return -1;
+		}
+		vec3 P = ray.o + t*ray.d;
+		int i0, i1, i2; // index of the vectors of the projection of the triangle on a primary plane
+		float maxN = glm::max(this->normal.x, this->normal.y);
+		maxN = glm::max(maxN, this->normal.z);
+		if (this->normal.x == maxN) { 
+			i0 = 0;
+			i1 = 1;
+			i2 = 2;
+		}
+		else if (this->normal.y == maxN) {
+			i0 = 1; 
+			i1 = 0;
+			i2 = 2;
+		}
+		else {
+			i0 = 2;
+			i1 = 0;
+			i2 = 1;
+		}
+
+		float u0 = P[i1] - V0[i1];
+		float v0 = P[i2] - V0[i2];
+		float u1 = V1[i1] - V0[i1];
+		float u2 = V2[i1] - V0[i1];
+		float v1 = V1[i2] - V0[i2];
+		float v2 = V2[i2] - V0[i2];
+		float alpha, beta;
+
+		if (u1 == 0) {
+			beta = u0 / u2;
+			if (0 <= beta && beta <= 1) {
+				alpha = (v0 - beta * v2) / v1;
+			}
+			else {
+				return -1;
+			}
+		}
+		else {
+			beta = (v0*u1 - u0*v1) / (v2*u1 - u2*v1);
+			if (0 <= beta && beta <= 1) {
+				alpha = (u0 - beta * u2) / u1;
+			}
+			else {
+				return -1;
+			}
+		}
+
+		if (alpha >= 0 && beta >= 0 && (alpha + beta) <= 1) {
+			
+			normal = this->normal;
+			intersection = P;
+			intersection += normal * EPSILON;
+			return t;
+		}
+		
 		return -1;
 	}
 };
@@ -143,6 +224,7 @@ public:
 	vector<Plane> planes;
 	vector<Sphere> spheres;
 	vector<Triangle> triangles;
+	vector<Object*> objects;
 
 	int load_nff(string path) {
 		ifstream f;
@@ -162,6 +244,7 @@ public:
 				assert(type == "from");
 				f >> camera.from;
 				f >> type;
+				cout << "camera.from: " << camera.from << endl;
 				assert(type == "at");
 				f >> camera.at;
 				f >> type;
@@ -181,6 +264,7 @@ public:
 			else if (type == "l") {
 				Light l;
 				f >> l.pos;
+				cout << "l.pos: " << l.pos << endl;
 				// TODO color is optional
 				f >> l.color;
 				lights.push_back(l);
@@ -201,17 +285,17 @@ public:
 				f >> v0;
 				f >> v1;
 				f >> v2;			
-				planes.push_back(Plane(v0, v1, v2, lastMaterial));
+				objects.push_back(new Plane(v0, v1, v2, lastMaterial));
 			}
 			else if (type == "s") {
 				vec3 pos;
 				float r;
 				f >> pos;
 				f >> r;
-				spheres.push_back(Sphere(pos, r, lastMaterial));
+				objects.push_back(new Sphere(pos, r, lastMaterial));
 			}
 			else if (type == "") {
-
+				cout << "read empty line" << endl;
 			}
 			else if (type == "p") {
 				int numVertices;
@@ -224,13 +308,14 @@ public:
 				f >> v0;
 				f >> v1;
 				f >> v2;
-				triangles.push_back(Triangle(v0, v1, v2, lastMaterial));
+				objects.push_back(new Triangle(v0, v1, v2, lastMaterial));
 			}else {
 				printf("load_nff: Unrecognizable '%s' ", type.c_str());
 				cin.get();
 				exit(1);
 			}
 		}
+		printf("number of lights: %d\n", lights.size());
 		printf("number of planes: %d\n", planes.size());
 		printf("number of spheres: %d\n", spheres.size());
 		printf("number of triangles: %d\n", triangles.size());
@@ -243,8 +328,8 @@ public:
 		Ray r;
 		float df, h, w;
 		vec3 xe, ye, ze;				
-		df = (float)(camera.from - camera.at).length();
-		float angle = (PI / 180.0f)*(camera.angle / 2.0f);
+		df = glm::length(camera.from - camera.at);
+		float angle = (M_PI / 180.0f)*(camera.angle / 2.0f);
 		h = 2 * df * tan(angle);
 		w = (camera.resX * h) / camera.resY;
 		ze = (camera.from - camera.at) / df;
@@ -293,73 +378,34 @@ public:
 	}
 
 	bool isShadow(Ray &ray, Light& l) {
-		float lrdist = (l.pos - ray.o).length();
+		float lrdist = glm::length(l.pos - ray.o);
 		float minDist = numeric_limits<float>::max();
 		vec3 intersection, normal;
-		for (auto const& pl : planes) {			
-			float dist = pl.intersectDistance(ray, minDist, intersection, normal);
-			if (dist >= 0 && dist < lrdist) {
-				return true;
-			}			
-		}
-		for (auto const& s : spheres) {		
-			float dist = s.intersectDistance(ray, minDist, intersection, normal);
+		for (auto obj : objects) {
+			vec3 intersection, normal;
+			float dist = obj->intersectDistance(ray, minDist, intersection, normal);
 			if (dist >= 0 && dist < lrdist) {
 				return true;
 			}
-		}
-		for (auto const& t : triangles) {			
-			float dist = t.intersectDistance(ray, minDist, intersection, normal);
-			if (dist >= 0 && dist < lrdist) {
-				return true;
-			}
-		}
+		}	
 		return false;
 	}
 
 	bool getIntersection(const Ray& ray, Material& material, float& minDist, vec3& minIntersection, vec3&minNormal) {
 		bool found = false;
-
-		
-		for (auto const& plane : planes) {
+		minDist = numeric_limits<float>::max();
+		for (auto obj : objects) {
 			vec3 intersection, normal;
-			float dist = plane.intersectDistance(ray, minDist, intersection, normal);
+			float dist = obj->intersectDistance(ray, minDist, intersection, normal);
 			if (dist <= 0) continue;
 			if (found == false || dist < minDist) {
 				minDist = dist;
 				minIntersection = intersection;
 				minNormal = normal;
-				material = plane.material;
+				material = obj->material;
 				found = true;
 			}
 		}
-
-		for (auto const& sphere : spheres) {
-			vec3 intersection, normal;
-			float dist = sphere.intersectDistance(ray, minDist, intersection, normal);
-			if (dist <= 0) continue;
-			if (found == false || dist < minDist) {
-				minDist = dist;
-				minIntersection = intersection;
-				minNormal = normal;
-				material = sphere.material;
-				found = true;
-			}
-		}
-
-		for (auto const& triangle : triangles) {
-			vec3 intersection, normal;
-			float dist = triangle.intersectDistance(ray, minDist, intersection, normal);
-			if (dist <= 0) continue;
-			if (found == false || dist < minDist) {
-				minDist = dist;
-				minIntersection = intersection;
-				minNormal = normal;
-				material = triangle.material;
-				found = true;
-			}
-		}
-
 		return found;
 	}
 
@@ -418,7 +464,16 @@ public:
 		// by experimenting Ks is the correct ratio to use............
 		vec3 reflectColor = material.Ks * rayTracing(reflectRay, depth - 1, RefrIndex);
 		
-		vec3 globalColor = localColor + reflectColor;
+		//refraction
+		/*vec3 refract = glm::refract(-viewDir, intersectionNormal, RefrIndex/material.index_of_refraction);
+		Ray refractRay;
+		refractRay.o = intersectionPoint - ((3* EPSILON)*intersectionNormal); //make sure ray start inside object
+		refractRay.d = normalize(refract);
+		vec3 refractColor = material.Ks * rayTracing(refractRay, depth - 1, material.index_of_refraction);
+		refractColor = max(refractColor, vec3(0, 0, 0));
+		*/
+
+		vec3 globalColor = localColor + reflectColor;// +refractColor;
 		// We use material specular value as the mix percentage, because in example images
 		// the material with Kd == 0 is the only material that has no reflection
 		return  globalColor;
