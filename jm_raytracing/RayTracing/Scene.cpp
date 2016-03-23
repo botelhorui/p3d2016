@@ -2,22 +2,16 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <sys\types.h>
 
 #include "Constants.h"
-
-// Camera
-int Camera::GetResX() {
-	return ResX;
-}
-
-int Camera::GetResY() {
-	return ResY;
-}
+#include "Plane.h"
+#include "Sphere.h"
 
 // Scene
 Scene::Scene() {
 	camera = new Camera();
-	colorBackground = vec3();
+	colorBackground = Color();
 }
 
 Scene::~Scene(){
@@ -28,7 +22,7 @@ Camera* Scene::GetCamera() {
 	return camera;
 }
 
-vec3 Scene::GetColorBackground() {
+Color Scene::GetColorBackground() {
 	return colorBackground;
 }
 
@@ -38,7 +32,7 @@ void CalculateCameraParameters(Camera *camera) {
 	result = camera->eye - camera->at;
 	length = result.Length();
 
-	camera->h = 2.0f * length * tanf(DEGREES_TO_RADIANS * camera->fovy/2.0f);
+	camera->h = 2.0f * length * tanf((float)DEGREES_TO_RADIANS * camera->fovy/2.0f);
 	camera->w = camera->h * camera->ResX/camera->ResY;
 /**/
 	camera->ze = (1.0f / length) * result;
@@ -63,6 +57,12 @@ bool Scene::LoadSceneNFF(std::string sceneName) {
 	std::string type;
 	std::istringstream stream;
 	Material material;
+
+	struct stat status;
+
+	if (stat(sceneName.c_str(), &status) == -1){
+		return false;
+	}
 
 	while (std::getline(input, info)){
 		//std::cout << "Line: " << info << "\n";
@@ -109,9 +109,9 @@ bool Scene::LoadSceneNFF(std::string sceneName) {
 		}
 
 		if (type == "b"){
-			stream >> colorBackground.x;
-			stream >> colorBackground.y;
-			stream >> colorBackground.z;
+			stream >> colorBackground.r;
+			stream >> colorBackground.g;
+			stream >> colorBackground.b;
 		}
 		else if (type == "v"){
 			cameraInfo = true;
@@ -122,16 +122,16 @@ bool Scene::LoadSceneNFF(std::string sceneName) {
 			stream >> light.center.x;
 			stream >> light.center.y;
 			stream >> light.center.z;
-			stream >> light.color.x;
-			stream >> light.color.y;
-			stream >> light.color.z;
+			stream >> light.color.r;
+			stream >> light.color.g;
+			stream >> light.color.b;
 			lights.push_back(light);
 			continue;
 		}
 		else if (type == "f") {
-			stream >> material.red;
-			stream >> material.green;
-			stream >> material.blue;
+			stream >> material.color.r;
+			stream >> material.color.g;
+			stream >> material.color.b;
 			stream >> material.kd;
 			stream >> material.ks;
 			stream >> material.shine;
@@ -140,37 +140,40 @@ bool Scene::LoadSceneNFF(std::string sceneName) {
 			continue;
 		}
 		else if (type == "pl") {
-			Object object;
-			object.type = kObjectPlane;
-			object.material = material;
+			Plane *plane = new Plane();
+			plane->type = kObjectPlane;
+			plane->material = material;
 
 			vec3 vertex;
 			stream >> vertex.x;
 			stream >> vertex.y;
 			stream >> vertex.z;
-			object.vertices.push_back(vertex);
+			plane->vertices.push_back(vertex);
 			stream >> vertex.x;
 			stream >> vertex.y;
 			stream >> vertex.z;
-			object.vertices.push_back(vertex);
+			plane->vertices.push_back(vertex);
 			stream >> vertex.x;
 			stream >> vertex.y;
 			stream >> vertex.z;
-			object.vertices.push_back(vertex);
+			plane->vertices.push_back(vertex);
+			plane->CalculateNormal();
 
-			objects.push_back(object);
+			objects.push_back(plane);
 			continue;
 		}
 		else if (type == "s") {
-			Object object;
-			object.type = kObjectSphere;
-			object.material = material;
+			Sphere *sphere = new Sphere();
+			sphere->type = kObjectSphere;
+			sphere->material = material;
 
-			stream >> object.center.x;
-			stream >> object.center.y;
-			stream >> object.center.z;
-			stream >> object.radius;
-			objects.push_back(object);
+			stream >> sphere->center.x;
+			stream >> sphere->center.y;
+			stream >> sphere->center.z;
+			float radius;
+			stream >> radius;
+			sphere->SetRadius(radius);
+			objects.push_back(sphere);
 			continue;
 		}
 	}
