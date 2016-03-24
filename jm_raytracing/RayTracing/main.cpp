@@ -85,7 +85,6 @@ Ray CalculatePrimaryRay(int x, int y) {
 }
 
 Color RayTracing(Ray ray, int depth, float refractionIndex) {
-	//Color RayTracing(Ray ray, int depth){
 	Color color;
 	float currentDistance = -1.0f, shortestDistance = -1.0f;
 	int currentObject = -1, intersectionObject = -1;
@@ -105,6 +104,7 @@ Color RayTracing(Ray ray, int depth, float refractionIndex) {
 	if (intersectionObject == -1) {
 		return scene->GetColorBackground();
 	}
+
 /**/
 	//color = object material’s ambient color;
 	//compute normal at the hit point;
@@ -116,7 +116,6 @@ Color RayTracing(Ray ray, int depth, float refractionIndex) {
 	//}
 	//float lights = 0.0f;
 	//float shadows = 0.0f;
-
 	for each (Light light in scene->lights) {
 		float shadowDistance = -1.0f;
 		float diffuseIntensity = 0.0f;
@@ -136,18 +135,17 @@ Color RayTracing(Ray ray, int depth, float refractionIndex) {
 			}
 
 			if (shadowDistance == -1.0f){
-/**/
 				color.r += scene->objects[intersectionObject]->material.color.r * scene->objects[intersectionObject]->material.kd * diffuseIntensity;
 				color.g += scene->objects[intersectionObject]->material.color.g * scene->objects[intersectionObject]->material.kd * diffuseIntensity;
 				color.b += scene->objects[intersectionObject]->material.color.b * scene->objects[intersectionObject]->material.kd * diffuseIntensity;
-/**/
+
 				float specularIntensity = 0.0f;
 				vec3 specular;
-				//vec3 viewT, viewN;
-				//viewN = (shadowRay.direction.Dot(normalIntersection)) * normalIntersection;
-				//viewT = shadowRay.direction - viewN;
-				//specular = viewN - viewT;
-				//specular = specular.Normalized();
+				vec3 viewT, viewN;
+				viewN = (shadowRay.direction.Dot(normalIntersection)) * normalIntersection;
+				viewT = shadowRay.direction - viewN;
+				specular = viewN - viewT;
+				specular = specular.Normalized();
 				specular = 2.0f * (shadowRay.direction.Dot(normalIntersection)) * normalIntersection - shadowRay.direction;
 
 				specularIntensity = specular.Dot(scene->GetCamera()->eye.Normalized());
@@ -156,9 +154,6 @@ Color RayTracing(Ray ray, int depth, float refractionIndex) {
 					color.r += scene->objects[intersectionObject]->material.color.r * scene->objects[intersectionObject]->material.ks * powf(specularIntensity, scene->objects[intersectionObject]->material.shine);
 					color.g += scene->objects[intersectionObject]->material.color.g * scene->objects[intersectionObject]->material.ks * powf(specularIntensity, scene->objects[intersectionObject]->material.shine);
 					color.b += scene->objects[intersectionObject]->material.color.b * scene->objects[intersectionObject]->material.ks * powf(specularIntensity, scene->objects[intersectionObject]->material.shine);
-					//color.r += scene->objects[intersectionObject]->material.color.r * scene->objects[intersectionObject]->material.ks *specularIntensity;
-					//color.g += scene->objects[intersectionObject]->material.color.g * scene->objects[intersectionObject]->material.ks *specularIntensity;
-					//color.b += scene->objects[intersectionObject]->material.color.b * scene->objects[intersectionObject]->material.ks *specularIntensity;
 				}
 			}
 		}
@@ -173,7 +168,6 @@ Color RayTracing(Ray ray, int depth, float refractionIndex) {
 	//	rColor = trace(scene, point, rRay direction, depth + 1);
 	//	reduce rColor by the specular reflection coefficient and add to color;
 	//}
-/**/
 	if (scene->objects[intersectionObject]->material.ks > 0){
 		Ray reflectedRay;
 		vec3 reflectedT, reflectedN, raySimetric;
@@ -185,21 +179,10 @@ Color RayTracing(Ray ray, int depth, float refractionIndex) {
 		reflectedRay.origin = intersectionPoint + reflectedRay.direction * kMaxDifference;
 
 		Color reflectiveColor = RayTracing(reflectedRay, depth + 1, refractionIndex);
-		float reflectionIntensity = reflectedRay.direction.Dot(scene->GetCamera()->eye.Normalized());
-/** /
-		color.r = reflectionIntensity;
-		color.g = reflectionIntensity;
-		color.b = reflectionIntensity;
-/**/
-		if (reflectionIntensity > 0.0f){
-			//color.r += reflectiveColor.r * scene->objects[intersectionObject]->material.ks * powf(reflectionIntensity, scene->objects[intersectionObject]->material.shine);
-			//color.g += reflectiveColor.g * scene->objects[intersectionObject]->material.ks * powf(reflectionIntensity, scene->objects[intersectionObject]->material.shine);
-			//color.b += reflectiveColor.b * scene->objects[intersectionObject]->material.ks * powf(reflectionIntensity, scene->objects[intersectionObject]->material.shine);
-			color.r += reflectiveColor.r * scene->objects[intersectionObject]->material.ks * reflectionIntensity;
-			color.g += reflectiveColor.g * scene->objects[intersectionObject]->material.ks * reflectionIntensity;
-			color.b += reflectiveColor.b * scene->objects[intersectionObject]->material.ks * reflectionIntensity;
-		}
-/**/
+
+		color.r += reflectiveColor.r * scene->objects[intersectionObject]->material.ks;
+		color.g += reflectiveColor.g * scene->objects[intersectionObject]->material.ks;
+		color.b += reflectiveColor.b * scene->objects[intersectionObject]->material.ks;
 	}
 	/** /
 			if (translucid object) {
@@ -375,25 +358,7 @@ void renderScene(){
 		    //YOUR 2 FUNTIONS: 
 			ray = CalculatePrimaryRay(x, y);
 			color = RayTracing(ray, 1, 1.0f);
-/** /
-			float maximum = 0.0f;
 
-			if (color.r > maximum){
-				maximum = color.r;
-			}
-			if (color.g > maximum) {
-				maximum = color.g;
-			}
-			if (color.b > maximum) {
-				maximum = color.b;
-			}
-
-			if (maximum > 1.0f){
-				color.r /= maximum;
-				color.g /= maximum;
-				color.b /= maximum;
-			}
-/**/
 			vertices[index_pos++]= (float)x;
 			vertices[index_pos++]= (float)y;
 			colors[index_col++]= (float)color.r;
@@ -406,16 +371,11 @@ void renderScene(){
 				index_col=0;
 			}
 		}
-/** /
-		printf("Line %d\n", y);
-		std::cout << "Ray origin: " << ray.origin << "\n";
-		std::cout << "Ray direction: " << ray.direction << "\n\n";
-/**/
+
 		if(draw_mode == 1) {  // desenhar o conteúdo da janela linha a linha
 				drawPoints();
 				index_pos=0;
 				index_col=0;
-/**/
 		}
 	}
 
@@ -510,7 +470,7 @@ int main(int argc, char* argv[]){
     //INSERT HERE YOUR CODE FOR PARSING NFF FILES
 	scene = new Scene();
 
-	if (!(scene->LoadSceneNFF("Scenes/balls_low.nff"))) {
+	if (!(scene->LoadSceneNFF("Scenes/balls_high.nff"))) {
 		return 0;
 	}
 
