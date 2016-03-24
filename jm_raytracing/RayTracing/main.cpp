@@ -18,8 +18,11 @@
 #include "OpenGL\glew\glew.h"
 #include "OpenGL\freeglut\freeglut.h"
 
-#include "Scene.h"
 #include "vectors.h"
+#include "Scene.h"
+#include "Color.h"
+#include "Ray.h"
+#include "Constants.h"
 
 #define CAPTION "ray tracer"
 
@@ -29,19 +32,7 @@
 #define MAX_DEPTH 6
 
 using namespace JMVector;
-
-// Structures
-
-typedef struct Color {
-	float r = 0;
-	float g = 0;
-	float b = 0;
-} Color;
-
-typedef struct Ray {
-	vec3 direction;
-	vec3 origin;
-}Ray;
+using namespace VectorConstants;
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -68,6 +59,8 @@ int WindowHandle = 0;
 
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 Ray CalculatePrimaryRay(int x, int y) {
+	vec3 test;
+
 	Ray ray;
 	float d;// , u, v;
 	//float u, v;
@@ -91,164 +84,115 @@ Ray CalculatePrimaryRay(int x, int y) {
 	return ray;
 }
 
-Color RayTracing(Ray ray, int depth, float refractionIndex){
-//Color RayTracing(Ray ray, int depth){
+Color RayTracing(Ray ray, int depth, float refractionIndex) {
 	Color color;
 	float currentDistance = -1.0f, shortestDistance = -1.0f;
 	int currentObject = -1, intersectionObject = -1;
-	// Sphere
-	float squareDistance, squareRadius, sphereB, sphereR;
+	float distance = -1.0f;
+	vec3 intersectionPoint, normalIntersection, lightDirection;
 
-	for each (Object object in scene->objects){
+	// for each object in the scene compute intersection ray - object and store the closest intersection
+	for each (Object *object in scene->objects) {
 		currentObject++;
 
-		if (object.type == kObjectPlane){
-			vec3 auxLeft = object.vertices[2] - object.vertices[1];
-			vec3 auxRight = object.vertices[1] - object.vertices[0];
-			vec3 normal = auxLeft.Cross(auxRight);
-			normal = normal.Normalized();
-			//std::cout << "Normal: " << normal << "\n";
-/** /
-			ray = origin + direction * t
-			ray = r(t), R(T)
-			origin = p, R0
-			direction = v, Rd
-/** /
-			Let r(t) = p + v * t be the equation of the ray.
-			Let n be the plane normal and q be a point on the plane.
-			Then any point x on the plane satisfies the equation
+		if (object->CalculateIntersection(ray, distance, intersectionPoint, normalIntersection)) {
+			intersectionObject = currentObject;
+		}
+	}
 
-				n.(q - x) = 0
+	// if ray misses all objects shade the pixel with background color
+	if (intersectionObject == -1) {
+		return scene->GetColorBackground();
+	}
 
-			So substitute the ray equation r(t) in for x and solve for t:
-			r(t) = p + v * t
-			n.(q - r(t)) = 0
-			n.(q - p - v * t) = 0
-			n.(q - p) = (n.v) * t
-			t = [n.(q - p)] / (n.v)
-
-			Then plug t back into the ray equation to find the point of intersection.
 /**/
-			if (normal.Dot(ray.direction) != 0){ // Raio paralelo ao plano (perpendicular à normal)
-				currentDistance = -(normal.Dot(ray.origin) - normal.Dot(object.vertices[0])) / (normal.Dot(ray.direction));
-				//currentDistance = (normal.Dot(object.vertices[0]) - normal.Dot(ray.origin)) / (normal.Dot(ray.direction));
-				//printf("Current distance: %.3f\n", currentDistance);
+	//color = object material’s ambient color;
+	//compute normal at the hit point;
+	//for (each source light) {
+	//	L = unit light vector from hit point to light source; 
+	//	if (L • normal>0)
+	//		if (!point in shadow); //trace shadow ray
+	//			color += diffuse color + specular color;
+	//}
+	//float lights = 0.0f;
+	//float shadows = 0.0f;
+	for each (Light light in scene->lights) {
+		float shadowDistance = -1.0f;
+		float diffuseIntensity = 0.0f;
+		vec3 shadowIntersectionPoint, shadowIntersectionNormal;
+		Ray shadowRay;
 
-				if (currentDistance > 0){
-					if (shortestDistance < 0){
-						shortestDistance = currentDistance;
-						//printf("Shortest distance: %.3f\n", shortestDistance);
-						intersectionObject = currentObject;
-					}
-					else if (currentDistance < shortestDistance){
-						shortestDistance = currentDistance;
-						//printf("Shortest distance: %.3f\n", shortestDistance);
-						intersectionObject = currentObject;
-					}
+		lightDirection = light.center - intersectionPoint;
+		lightDirection = lightDirection.Normalized();
+		diffuseIntensity = normalIntersection.Dot(lightDirection);
+
+		shadowRay.origin = intersectionPoint + lightDirection * kMaxDifference; // Add offset to shadow ray origin
+		shadowRay.direction = lightDirection;
+
+		if (diffuseIntensity > 0.0f) {
+			for each (Object *object in scene->objects) {
+				object->CalculateIntersection(shadowRay, shadowDistance, shadowIntersectionPoint, shadowIntersectionNormal);
+			}
+
+			if (shadowDistance == -1.0f){
+				color.r += scene->objects[intersectionObject]->material.color.r * scene->objects[intersectionObject]->material.kd * diffuseIntensity;
+				color.g += scene->objects[intersectionObject]->material.color.g * scene->objects[intersectionObject]->material.kd * diffuseIntensity;
+				color.b += scene->objects[intersectionObject]->material.color.b * scene->objects[intersectionObject]->material.kd * diffuseIntensity;
+
+				float specularIntensity = 0.0f;
+				vec3 specular;
+				vec3 viewT, viewN;
+				viewN = (shadowRay.direction.Dot(normalIntersection)) * normalIntersection;
+				viewT = shadowRay.direction - viewN;
+				specular = viewN - viewT;
+				specular = specular.Normalized();
+				specular = 2.0f * (shadowRay.direction.Dot(normalIntersection)) * normalIntersection - shadowRay.direction;
+
+				specularIntensity = specular.Dot(scene->GetCamera()->eye.Normalized());
+
+				if (specularIntensity > 0.0f) {
+					color.r += scene->objects[intersectionObject]->material.color.r * scene->objects[intersectionObject]->material.ks * powf(specularIntensity, scene->objects[intersectionObject]->material.shine);
+					color.g += scene->objects[intersectionObject]->material.color.g * scene->objects[intersectionObject]->material.ks * powf(specularIntensity, scene->objects[intersectionObject]->material.shine);
+					color.b += scene->objects[intersectionObject]->material.color.b * scene->objects[intersectionObject]->material.ks * powf(specularIntensity, scene->objects[intersectionObject]->material.shine);
 				}
 			}
 		}
-		else if (object.type == kObjectSphere){
-			squareDistance = powf((object.center.x - ray.origin.x), 2) + powf((object.center.y - ray.origin.y), 2) + powf((object.center.z - ray.origin.z), 2);
-			squareRadius = powf(object.radius, 2);
-
-			if (squareDistance == squareRadius){
-				printf("Square distance: %.4f - Square radius: %.4f\n", squareDistance, squareRadius);
-				continue;
-			}
-
-			sphereB = ray.direction.x * (object.center.x - ray.origin.x) + ray.direction.y * (object.center.y - ray.origin.y) + ray.direction.z * (object.center.z - ray.origin.z);
-			//sphereB = ray.origin.x * (object.center.x - ray.direction.x) + ray.origin.y * (object.center.y - ray.direction.y) + ray.origin.z * (object.center.z - ray.direction.z);
-
-			if (squareDistance > squareRadius){
-				if (sphereB < 0){
-					printf("Ray not pointing to sphere.\n");
-					continue;
-				}
-			}
-
-			sphereR = powf(sphereB, 2) - squareDistance + squareRadius;
-/** /
-			printf("Square distance: %.4f\n", squareDistance);
-			printf("Square radius: %.4f\n", squareRadius);
-			printf("B: %.4f\n", sphereB);
-			printf("R: %.4f\n", sphereR);
-			printf("\n");
-/**/
-			if (sphereR < 0)
-			{
-				//printf("R inferior a 0.\n");
-				continue;
-			}
-
-			if (squareDistance > squareRadius){
-				currentDistance = sphereB - sqrtf(sphereR);
-			}
-			else{
-				currentDistance = sphereB + sqrtf(sphereR);
-			}
-
-			if (shortestDistance < 0){
-				shortestDistance = currentDistance;
-				intersectionObject = currentObject;
-			}
-			else if (currentDistance < shortestDistance){
-				shortestDistance = currentDistance;
-				intersectionObject = currentObject;
-			}
-		}
 	}
 
-	if (scene->objects[intersectionObject].type == kObjectSphere){
-		printf("Object intersected: %d\n", intersectionObject);
-	}
-
-	if (intersectionObject == -1){
-		color.r = scene->GetColorBackground().x;
-		color.g = scene->GetColorBackground().y;
-		color.b = scene->GetColorBackground().z;
-	}
-	else{
-		color.r = scene->objects[intersectionObject].material.red;
-		color.g = scene->objects[intersectionObject].material.green;
-		color.b = scene->objects[intersectionObject].material.blue;
-	}
-
-/** /	
-	for each object in the scene
-		compute intersection ray - object;
-	store the closest intersection;
-	if there is an intersection
-		shade the pixel using color, lights, materials;
-	else // ray misses all objects
-		shade the pixel with background color
-/** /
-	//intersect ray with all objects and find a hit point(if any) closest to the start of the ray 
-	if (!intersection point) {
-		return BACKGROUND;
-	}
-	else {
-		color = object material’s ambient color; compute normal at the hit point;
-		for (each source light) {
-			L = unit light vector from hit point to light source; if (L • normal>0)
-				if (!point in shadow); //trace shadow ray color += diffuse color + specular color;
-		}
-		if (depth >= MAX_DEPTH) {
-			return color;
-		}
-		if (reflective object) {
-			rRay = calculate ray in the reflected direction;
-			rColor = trace(scene, point, rRay direction, depth + 1);
-			reduce rColor by the specular reflection coefficient and add to color;
-		}
-		if (translucid object) {
-			tRay = calculate ray in the refracted direction;
-			tColor = trace(scene, point, tRay direction, depth + 1);
-			reduce tColor by the transmittance coefficient and add to color;
-		}
-
-/**/
+	if (depth >= MAX_DEPTH) {
 		return color;
+	}
+
+	//if (reflective object) {
+	//	rRay = calculate ray in the reflected direction;
+	//	rColor = trace(scene, point, rRay direction, depth + 1);
+	//	reduce rColor by the specular reflection coefficient and add to color;
+	//}
+	if (scene->objects[intersectionObject]->material.ks > 0){
+		Ray reflectedRay;
+		vec3 reflectedT, reflectedN, raySimetric;
+		raySimetric = -ray.direction;
+		reflectedN = (raySimetric.Dot(normalIntersection)) * normalIntersection;
+		reflectedT = raySimetric - reflectedN;
+		reflectedRay.direction = reflectedN - reflectedT;
+		reflectedRay.direction = reflectedRay.direction.Normalized();
+		reflectedRay.origin = intersectionPoint + reflectedRay.direction * kMaxDifference;
+
+		Color reflectiveColor = RayTracing(reflectedRay, depth + 1, refractionIndex);
+
+		color.r += reflectiveColor.r * scene->objects[intersectionObject]->material.ks;
+		color.g += reflectiveColor.g * scene->objects[intersectionObject]->material.ks;
+		color.b += reflectiveColor.b * scene->objects[intersectionObject]->material.ks;
+	}
+	/** /
+			if (translucid object) {
+				tRay = calculate ray in the refracted direction;
+				tColor = trace(scene, point, tRay direction, depth + 1);
+				reduce tColor by the transmittance coefficient and add to color;
+			}
+
+	/**/
+	return color;
 }
 /////////////////////////////////////////////////////////////////////// ERRORS
 
@@ -427,16 +371,11 @@ void renderScene(){
 				index_col=0;
 			}
 		}
-/** /
-		printf("Line %d\n", y);
-		std::cout << "Ray origin: " << ray.origin << "\n";
-		std::cout << "Ray direction: " << ray.direction << "\n\n";
-/**/
+
 		if(draw_mode == 1) {  // desenhar o conteúdo da janela linha a linha
 				drawPoints();
 				index_pos=0;
 				index_col=0;
-/**/
 		}
 	}
 
@@ -531,7 +470,7 @@ int main(int argc, char* argv[]){
     //INSERT HERE YOUR CODE FOR PARSING NFF FILES
 	scene = new Scene();
 
-	if (!(scene->LoadSceneNFF("scene1.nff"))) {
+	if (!(scene->LoadSceneNFF("Scenes/balls_high.nff"))) {
 		return 0;
 	}
 

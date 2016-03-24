@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Objects">
+      <UniqueIdentifier>{369bdd64-89fb-41ad-abd0-c7497611522d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -26,6 +29,33 @@
     </ClCompile>
     <ClCompile Include="Scene.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sphere.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Plane.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Polygon.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Object.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Color.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Ray.cpp">
+      <Filter>Objects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -41,9 +71,54 @@
     <ClInclude Include="Constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Sphere.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Plane.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Polygon.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Object.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Color.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Ray.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="scene1.nff">
+    <None Include="Scenes\balls_high.nff">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Scenes\balls_low.nff">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Scenes\balls_medium.nff">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Scenes\mount_high.nff">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Scenes\mount_low.nff">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Scenes\mount_very_high.nff">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Scenes\scene1.nff">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
