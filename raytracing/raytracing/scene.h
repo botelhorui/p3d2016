@@ -444,14 +444,27 @@ public:
 			// diffuse component
 			vec3 lightDir = normalize(l.pos - intersectionPoint);
 			float lambertian = glm::max(0.0f, dot(lightDir, intersectionNormal));
-			vec3 diffuse = material.color * (material.Kd * lambertian);
-			localColor += diffuse;
+			
+			if (lambertian > 0.0f) {
 
-			// specular component
-			vec3 halfDir = normalize(lightDir + viewDir);
-			float spec = glm::max(0.0f, dot(halfDir, intersectionNormal));
-			vec3 specular = material.color * (material.Ks * pow(spec, material.Shine));
-			localColor += specular;
+				vec3 diffuse = material.color * (material.Kd * lambertian);
+				localColor += diffuse;
+
+				// specular component
+
+				// bling-phong imlementation
+				//vec3 halfDir = normalize(lightDir + viewDir);
+				//float spec = glm::max(0.0f, dot(halfDir, intersectionNormal));
+
+				// phong implementation
+				vec3 l = lightDir;
+				vec3 n = intersectionNormal;
+				vec3 refl = (2 * dot(n, l)*n) - l;
+				float spec = glm::max(0.0f, dot(refl, viewDir));
+				vec3 specular = material.color * (material.Ks * pow(spec, material.Shine));
+				localColor += specular;
+			}
+			
 		}		
 		if (depth == 1) {
 			return localColor;
@@ -465,15 +478,15 @@ public:
 		vec3 reflectColor = material.Ks * rayTracing(reflectRay, depth - 1, RefrIndex);
 		
 		//refraction
-		/*vec3 refract = glm::refract(-viewDir, intersectionNormal, RefrIndex/material.index_of_refraction);
+		vec3 refract = glm::refract(-viewDir, intersectionNormal, RefrIndex/material.index_of_refraction);
 		Ray refractRay;
 		refractRay.o = intersectionPoint - ((3* EPSILON)*intersectionNormal); //make sure ray start inside object
 		refractRay.d = normalize(refract);
 		vec3 refractColor = material.Ks * rayTracing(refractRay, depth - 1, material.index_of_refraction);
 		refractColor = max(refractColor, vec3(0, 0, 0));
-		*/
+		
 
-		vec3 globalColor = localColor + reflectColor;// +refractColor;
+		vec3 globalColor = localColor + reflectColor + refractColor;
 		// We use material specular value as the mix percentage, because in example images
 		// the material with Kd == 0 is the only material that has no reflection
 		return  globalColor;

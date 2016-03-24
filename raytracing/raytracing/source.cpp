@@ -29,7 +29,7 @@
 
 #define MAX_DEPTH 6
 
-#define RAY_TRACING_DEPTH MAX_DEPTH
+#define RAY_TRACING_DEPTH 6
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
 float *vertices;
@@ -249,6 +249,12 @@ void renderScene()
 		{		    
 			ray = scene.calculatePrimaryRay(x, y);
 			
+			if (x == 213 && y == 270) {
+				printf("oi\n");
+			}
+			else {
+				continue;
+			}
 			color = scene.rayTracing(ray, RAY_TRACING_DEPTH, 1.0);
 
 			vertices[index_pos++]= (float)x;
