@@ -7,22 +7,20 @@
 
 #ifndef SCENE
 #define SCENE
-using namespace std;
-using namespace glm;
 
-#define EPSILON 0.001f
+#define EPSILON (float)1e-6
 
 class Light {
 public:
-	vec3 pos;
-	vec3 color;
+	glm::vec3 pos;
+	glm::vec3 color;
 };
 
 class Camera {
 public:
-	vec3 from;
-	vec3 at;
-	vec3 up;
+	glm::vec3 from;
+	glm::vec3 at;
+	glm::vec3 up;
 	float angle;
 	float hither;
 	int resX;
@@ -32,25 +30,25 @@ public:
 class Scene {
 public:
 	Camera camera;
-	vec3 backgroundColor;
-	vector<Light> lights;
+	glm::vec3 backgroundColor;
+	std::vector<Light> lights;
 	// we have one vector for each type to increase speed
-	vector<Plane> planes;
-	vector<Sphere> spheres;
-	vector<Triangle> triangles;
-	vector<Object*> objects;
+	std::vector<Plane> planes;
+	std::vector<Sphere> spheres;
+	std::vector<Triangle> triangles;
+	std::vector<Object*> objects;
 
-	int load_nff(string path);
+	int load_nff(std::string path);
 
 	Ray calculatePrimaryRay(int x, int y);
 
-	vec3 getColor(vec3 viewDir, Material material, vec3 point, vec3 normal);
+	glm::vec3 getColor(glm::vec3 viewDir, Material material, glm::vec3 point, glm::vec3 normal);
 
 	bool isShadow(Ray &ray, Light& l);
 
-	bool getIntersection(const Ray& ray, Material& material, float& minDist, vec3& minIntersection, vec3&minNormal);
+	bool getIntersection(const Ray& ray, Material& material, float& minDist, glm::vec3& minIntersection, glm::vec3&minNormal);
 
 
-	vec3 rayTracing(Ray ray, int depth, float RefrIndex);
+	glm::vec3 rayTracing(Ray ray, int depth, float RefrIndex);
 };
 #endif

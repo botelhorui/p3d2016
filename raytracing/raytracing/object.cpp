@@ -6,12 +6,12 @@
 #include <glm/glm.hpp>
 #include "scene.h"
 
-float Plane::intersectDistance(const Ray& ray, const float& minDist, vec3& intersection, vec3& normal) const {
-	float denom = dot(n, ray.d);
+float Plane::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const {
+	float denom = glm::dot(n, ray.d);
 	float t = -1;
-	if (abs(denom) > 0.0001f) {
-		t = -(d + dot(ray.o, n)) / denom;
-		if (t > 0.0001f) {
+	if (abs(denom) > EPSILON) {
+		t = -(d + glm::dot(ray.o, n)) / denom;
+		if (t > EPSILON) {
 			intersection = ray.o + t*ray.d;
 			normal = n;
 		}
@@ -23,13 +23,13 @@ float Plane::intersectDistance(const Ray& ray, const float& minDist, vec3& inter
 }
 
 
-float Sphere::intersectDistance(const Ray& ray, const float& minDist, vec3& intersection, vec3& normal) const {
-	vec3 diff = (pos - ray.o);
+float Sphere::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const {
+	glm::vec3 diff = (pos - ray.o);
 	float t = -1;
 	float distsquare = glm::length(diff) * glm::length(diff);
-
-	if (distsquare == r*r) return -1; // ray on the sphere
-	float B = dot(ray.d, diff);
+	//if (abs(distsquare - r*r) < FLT_EPSILON) return -1; // ray on the sphere
+	if (distsquare < r*r) return -1;
+	float B = glm::dot(ray.d, diff);
 	if (distsquare > r*r) {
 		if (B < 0) return -1; // sphere behind eye
 	}
@@ -42,14 +42,14 @@ float Sphere::intersectDistance(const Ray& ray, const float& minDist, vec3& inte
 		t = B + glm::sqrt(R);
 	}
 	intersection = ray.o + t *ray.d;
-	normal = normalize(intersection - pos);
+	normal = glm::normalize(intersection - pos);
 	intersection += normal * r * 0.001f;
 	return t;
 }
 
-float Triangle::intersectDistance(const Ray& ray, const float& minDist, vec3& intersection, vec3& normal) const {
-	float NO = dot(ray.o, this->normal);
-	float ND = dot(ray.d, this->normal);
+float Triangle::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const {
+	float NO = glm::dot(ray.o, this->normal);
+	float ND = glm::dot(ray.d, this->normal);
 	if (ND == 0) { // ray parallel to triangle
 		return -1;
 	}
@@ -60,7 +60,7 @@ float Triangle::intersectDistance(const Ray& ray, const float& minDist, vec3& in
 	if (minDist < t) { // a closed intersection has already been found
 		return -1;
 	}
-	vec3 P = ray.o + t*ray.d;
+	glm::vec3 P = ray.o + t*ray.d;
 	int i0, i1, i2; // index of the vectors of the projection of the triangle on a primary plane
 	float maxN = glm::max(this->normal.x, this->normal.y);
 	maxN = glm::max(maxN, this->normal.z);

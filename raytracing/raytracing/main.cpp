@@ -11,7 +11,6 @@
 
 #include <stdlib.h>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <stdio.h>
 
@@ -238,7 +237,7 @@ void renderScene()
 	}
 	int index_pos=0;
 	int index_col=0;
-	vec3 color;
+	glm::vec3 color;
 	Ray ray;
 	int y, x;
 	for (y = 0; y < RES_Y; y++)

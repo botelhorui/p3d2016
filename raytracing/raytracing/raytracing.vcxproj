@@ -15,9 +15,9 @@
     <ClInclude Include="scene.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Objects.cpp" />
+    <ClCompile Include="object.cpp" />
     <ClCompile Include="scene.cpp" />
-    <ClCompile Include="source.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D33C906C-7945-4E89-8CA1-0A5EDED650A6}</ProjectGuid>
