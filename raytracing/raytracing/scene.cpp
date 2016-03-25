@@ -227,11 +227,11 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float RefrIndex) {
 		Ray r;
 		r.o = intersectionPoint;
 		r.d = glm::normalize(light.pos - r.o);
+		r.o += r.d * EPSILON;
 		if (isShadow(r, light)) {
 			continue;
 		}
 		// else light is not blocked. calculate bling phong color
-
 		// ambient component (it is not defined in the nff file)
 
 		// diffuse component
@@ -266,6 +266,7 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float RefrIndex) {
 	Ray reflectRay;
 	reflectRay.o = intersectionPoint;
 	reflectRay.d = glm::normalize(reflect);
+	reflectRay.o += EPSILON * reflectRay.d;
 	// by experimenting Ks is the correct ratio to use............
 	glm::vec3 reflectColor = material.Ks * rayTracing(reflectRay, depth - 1, RefrIndex);
 
@@ -287,7 +288,8 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float RefrIndex) {
 		refractDir = glm::normalize(sinTheta*t + cosTheta*(-n));
 	}
 	refractRay.d = refractDir;
-	refractRay.o = intersectionPoint - ((2 * EPSILON)*n); //make sure ray start inside object
+	refractRay.o = intersectionPoint;
+	refractRay.o += refractRay.d * EPSILON; //make sure ray start inside object
 	glm::vec3 refractColor = material.T * rayTracing(refractRay, depth - 1, material.index_of_refraction);
 
 	glm::vec3 globalColor = localColor + reflectColor + refractColor;

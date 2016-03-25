@@ -25,26 +25,35 @@ float Plane::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& 
 
 float Sphere::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const {
 	glm::vec3 diff = (pos - ray.o);
-	float t = -1;
-	float distsquare = glm::length(diff) * glm::length(diff);
-	//if (abs(distsquare - r*r) < FLT_EPSILON) return -1; // ray on the sphere
-	if (distsquare < r*r) return -1;
-	float B = glm::dot(ray.d, diff);
-	if (distsquare > r*r) {
-		if (B < 0) return -1; // sphere behind eye
+	float distance = -1;
+	float distsquare = glm::length(diff) * glm::length(diff);	
+	if (distsquare == radius*radius) {
+		return distance;
 	}
-	float R = B*B - distsquare + r*r;
-	if (R < 0) return -1; // does not intersect sphere
-	if (distsquare > r*r) {
-		t = B - glm::sqrt(R);
+	float B = glm::dot(ray.d, diff);
+	if (distsquare > radius*radius) {
+		if (B < 0){
+			return distance; // sphere behind eye
+		}
+	}
+	float R = B*B - distsquare + radius*radius;
+	if (R < 0)
+	{
+		return -1; // does not intersect sphere
+	}
+	if (distsquare > radius*radius) {
+		distance = B - glm::sqrt(R);
 	}
 	else {
-		t = B + glm::sqrt(R);
+		distance = B + glm::sqrt(R);
 	}
-	intersection = ray.o + t *ray.d;
+	intersection = ray.o + distance *ray.d;
 	normal = glm::normalize(intersection - pos);
-	intersection += normal * r * 0.001f;
-	return t;
+	if(distsquare < radius*radius)
+	{
+		normal = -normal;
+	}
+	return distance;
 }
 
 float Triangle::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const {

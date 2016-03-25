@@ -44,8 +44,8 @@ public:
 class Sphere : public Object {
 public:
 	glm::vec3 pos;
-	float r;
-	Sphere(glm::vec3 pos, float r, Material mat) : pos(pos), r(r), Object(mat) {
+	float radius;
+	Sphere(glm::vec3 pos, float r, Material mat) : pos(pos), radius(r), Object(mat) {
 	}
 
 	float intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const;
