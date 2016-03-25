@@ -72,7 +72,7 @@ int Scene::load_nff(std::string path) {
 			f >> lastMaterial.Ks;
 			f >> lastMaterial.Shine;
 			f >> lastMaterial.T;
-			f >> lastMaterial.index_of_refraction;
+			f >> lastMaterial.ior;
 		}
 		else if (type == "pl") {
 			glm::vec3 v0, v1, v2;
@@ -176,8 +176,9 @@ bool Scene::isShadow(Ray &ray, Light& l) {
 	float lrdist = glm::length(l.pos - ray.o);
 	float minDist = std::numeric_limits<float>::max();
 	glm::vec3 intersection, normal;
+	bool intoInside;
 	for (auto obj : objects) {
-		float dist = obj->intersectDistance(ray, minDist, intersection, normal);
+		float dist = obj->intersectDistance(ray, minDist, intersection, normal, intoInside);
 		if (dist >= 0 && dist < lrdist) {
 			return true;
 		}
@@ -185,12 +186,12 @@ bool Scene::isShadow(Ray &ray, Light& l) {
 	return false;
 }
 
-bool Scene::getIntersection(const Ray& ray, Material& material, float& minDist, glm::vec3& minIntersection, glm::vec3&minNormal) {
+bool Scene::getIntersection(const Ray& ray, Material& material, float& minDist, glm::vec3& minIntersection, glm::vec3&minNormal, bool& intoInside) {
 	bool found = false;
 	minDist = std::numeric_limits<float>::max();
 	for (auto obj : objects) {
 		glm::vec3 intersection, normal;
-		float dist = obj->intersectDistance(ray, minDist, intersection, normal);
+		float dist = obj->intersectDistance(ray, minDist, intersection, normal, intoInside);
 		if (dist <= 0) continue;
 		if (found == false || dist < minDist) {
 			minDist = dist;
@@ -203,7 +204,7 @@ bool Scene::getIntersection(const Ray& ray, Material& material, float& minDist, 
 	return found;
 }
 
-glm::vec3 Scene::rayTracing(Ray ray, int depth, float RefrIndex) {
+glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 	if (depth == 0) {
 		return glm::vec3(0, 0, 0);
 	}
@@ -211,8 +212,9 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float RefrIndex) {
 	glm::vec3 intersectionPoint;
 	glm::vec3  intersectionNormal;
 	bool found = false;
+	bool intoInside = false;
 	Material material;
-	found = getIntersection(ray, material, minDist, intersectionPoint, intersectionNormal);
+	found = getIntersection(ray, material, minDist, intersectionPoint, intersectionNormal, intoInside);
 	if (!found) return backgroundColor;
 
 	// intersection found. compute color:
@@ -268,16 +270,26 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float RefrIndex) {
 	reflectRay.d = glm::normalize(reflect);
 	reflectRay.o += EPSILON * reflectRay.d;
 	// by experimenting Ks is the correct ratio to use............
-	glm::vec3 reflectColor = material.Ks * rayTracing(reflectRay, depth - 1, RefrIndex);
+	glm::vec3 reflectColor = material.Ks * rayTracing(reflectRay, depth - 1, ior);
 
 	//refraction
 	Ray refractRay;
 	glm::vec3 refractDir;
 	glm::vec3 v = viewDir;
 	glm::vec3 n = intersectionNormal;
-	float eta = RefrIndex / material.index_of_refraction;
+	float eta;
+	if(intoInside)
+	{
+		// from outside object into inside
+		eta = ior / material.ior;
+	}else
+	{
+		// from inside object to outside
+		eta = ior / 1.0f;
+	}
+	
 	if (false) {
-		glm::vec3 refract = glm::refract(v, n, eta);
+		glm::vec3 refract = glm::normalize(glm::refract(v, n, eta));
 	}
 	else {
 		// surface tangent vector
@@ -285,12 +297,12 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float RefrIndex) {
 		float sinTheta = glm::length(vt)*eta;
 		float cosTheta = glm::sqrt(1.0f - sinTheta*sinTheta);
 		glm::vec3 t = glm::normalize(vt);
-		refractDir = glm::normalize(sinTheta*t + cosTheta*(-n));
+		refractDir = glm::normalize(sinTheta*t -cosTheta*n);
 	}
 	refractRay.d = refractDir;
 	refractRay.o = intersectionPoint;
 	refractRay.o += refractRay.d * EPSILON; //make sure ray start inside object
-	glm::vec3 refractColor = material.T * rayTracing(refractRay, depth - 1, material.index_of_refraction);
+	glm::vec3 refractColor = material.T * rayTracing(refractRay, depth - 1, material.ior);
 
 	glm::vec3 globalColor = localColor + reflectColor + refractColor;
 	// We use material specular value as the mix percentage, because in example images

@@ -16,14 +16,14 @@ public:
 	float Ks;
 	float Shine;
 	float T;
-	float index_of_refraction;
+	float ior;
 };
 
 class Object {
 public:
 	Material material;
 	Object(Material mat) : material(mat) {}
-	virtual float intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const {
+	virtual float intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal, bool& intoInside) const {
 		return -1;
 	};
 };
@@ -38,7 +38,7 @@ public:
 		n = glm::normalize(glm::cross(s0, s1));
 		d = -glm::dot(v0, n);
 	}
-	float intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const;
+	float intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal, bool& intoInside) const;
 };
 
 class Sphere : public Object {
@@ -48,7 +48,7 @@ public:
 	Sphere(glm::vec3 pos, float r, Material mat) : pos(pos), radius(r), Object(mat) {
 	}
 
-	float intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const;
+	float intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal, bool& intoInside) const;
 };
 
 class Triangle : public Object {
@@ -64,6 +64,6 @@ public:
 		// for each point P of the plane, P.N is constant
 		d = -glm::dot(v0, normal);
 	}
-	float intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const;
+	float intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal, bool& intoInside) const;
 };
 #endif

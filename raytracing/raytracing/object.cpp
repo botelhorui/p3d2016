@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include "scene.h"
 
-float Plane::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const {
+float Plane::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal, bool& intoInside) const {
 	float denom = glm::dot(n, ray.d);
 	float t = -1;
 	if (abs(denom) > EPSILON) {
@@ -19,11 +19,12 @@ float Plane::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& 
 			t = -1;
 		}
 	}
+	intoInside = false;
 	return t;
 }
 
 
-float Sphere::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const {
+float Sphere::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal, bool& intoInside) const {
 	glm::vec3 diff = (pos - ray.o);
 	float distance = -1;
 	float distsquare = glm::length(diff) * glm::length(diff);	
@@ -52,11 +53,15 @@ float Sphere::intersectDistance(const Ray& ray, const float& minDist, glm::vec3&
 	if(distsquare < radius*radius)
 	{
 		normal = -normal;
+		intoInside = false;
+	}else
+	{
+		intoInside = true;
 	}
 	return distance;
 }
 
-float Triangle::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal) const {
+float Triangle::intersectDistance(const Ray& ray, const float& minDist, glm::vec3& intersection, glm::vec3& normal, bool& intoInside) const {
 	float NO = glm::dot(ray.o, this->normal);
 	float ND = glm::dot(ray.d, this->normal);
 	if (ND == 0) { // ray parallel to triangle
@@ -117,10 +122,10 @@ float Triangle::intersectDistance(const Ray& ray, const float& minDist, glm::vec
 	}
 
 	if (alpha >= 0 && beta >= 0 && (alpha + beta) <= 1) {
-
 		normal = this->normal;
 		intersection = P;
-		intersection += normal * EPSILON;
+		//intersection += normal * EPSILON;
+		intoInside = false;
 		return t;
 	}
 

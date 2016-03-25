@@ -8,7 +8,7 @@
 #ifndef SCENE
 #define SCENE
 
-#define EPSILON (float)1e-3
+#define EPSILON (float)1e-4
 
 class Light {
 public:
@@ -46,7 +46,7 @@ public:
 
 	bool isShadow(Ray &ray, Light& l);
 
-	bool getIntersection(const Ray& ray, Material& material, float& minDist, glm::vec3& minIntersection, glm::vec3&minNormal);
+	bool getIntersection(const Ray& ray, Material& material, float& minDist, glm::vec3& minIntersection, glm::vec3&minNormal, bool& intoInside);
 
 
 	glm::vec3 rayTracing(Ray ray, int depth, float RefrIndex);
