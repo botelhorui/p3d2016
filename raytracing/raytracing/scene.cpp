@@ -273,6 +273,8 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 	glm::vec3 reflectColor = material.Ks * rayTracing(reflectRay, depth - 1, ior);
 
 	//refraction
+	// https://en.wikipedia.org/wiki/Snell%27s_law#Vector_form
+	// or professor slides
 	Ray refractRay;
 	glm::vec3 refractDir;
 	glm::vec3 v = viewDir;
@@ -289,6 +291,7 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 	}
 	
 	if (false) {
+		// testing glm refract but it does not work
 		glm::vec3 refract = glm::normalize(glm::refract(v, n, eta));
 	}
 	else {
