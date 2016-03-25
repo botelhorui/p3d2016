@@ -249,12 +249,8 @@ void renderScene()
 		{		    
 			ray = scene.calculatePrimaryRay(x, y);
 			
-			if (x == 213 && y == 270) {
-				printf("oi\n");
-			}
-			else {
-				continue;
-			}
+			//if (x == 152 && y == 248) {printf("oi\n");}else{continue;}
+			
 			color = scene.rayTracing(ray, RAY_TRACING_DEPTH, 1.0);
 
 			vertices[index_pos++]= (float)x;

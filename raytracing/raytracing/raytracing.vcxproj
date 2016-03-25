@@ -11,9 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="object.h" />
     <ClInclude Include="scene.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Objects.cpp" />
+    <ClCompile Include="scene.cpp" />
     <ClCompile Include="source.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
