@@ -7,6 +7,7 @@
 #include "Constants.h"
 #include "Plane.h"
 #include "Sphere.h"
+#include "Triangle.h"
 
 // Scene
 Scene::Scene() {
@@ -51,12 +52,15 @@ void CalculateCameraParameters(Camera *camera) {
 }
 
 bool Scene::LoadSceneNFF(std::string sceneName) {
-	bool cameraInfo = false;
+	bool readingCameraInfo = false;
+	bool readingTriangleInfo = false;
+	int triangleVertices = 0, verticeCounter = 0;
 	std::ifstream input(sceneName);
 	std::string info;
 	std::string type;
 	std::istringstream stream;
 	Material material;
+	Triangle *triangle = NULL;
 
 	struct stat status;
 
@@ -65,14 +69,11 @@ bool Scene::LoadSceneNFF(std::string sceneName) {
 	}
 
 	while (std::getline(input, info)){
-		//std::cout << "Line: " << info << "\n";
-
-		//std::istringstream stream(info);
 		stream = std::istringstream(info);
-		stream >> type;
-		//std::cout << "Type: " << type << "\n\n";
 
-		if (cameraInfo){
+		if (readingCameraInfo){
+			stream >> type;
+
 			if (type == "from"){
 				stream >> camera->eye.x;
 				stream >> camera->eye.y;
@@ -103,10 +104,31 @@ bool Scene::LoadSceneNFF(std::string sceneName) {
 				stream >> camera->ResX;
 				stream >> camera->ResY;
 				CalculateCameraParameters(camera);
-				cameraInfo = false;
+				readingCameraInfo = false;
 				continue;
 			}
 		}
+
+		if (readingTriangleInfo) {
+			vec3 vertex;
+			stream >> vertex.x;
+			stream >> vertex.y;
+			stream >> vertex.z;
+			triangle->vertices.push_back(vertex);
+			verticeCounter++;
+
+			if (verticeCounter == triangleVertices){
+				triangle->CalculateNormal();
+				objects.push_back(triangle);
+				verticeCounter = 0;
+				readingTriangleInfo = false;
+				continue;
+			}
+
+			continue;
+		}
+
+		stream >> type;
 
 		if (type == "b"){
 			stream >> colorBackground.r;
@@ -114,7 +136,7 @@ bool Scene::LoadSceneNFF(std::string sceneName) {
 			stream >> colorBackground.b;
 		}
 		else if (type == "v"){
-			cameraInfo = true;
+			readingCameraInfo = true;
 			continue;
 		}
 		else if (type == "l") {
@@ -137,6 +159,14 @@ bool Scene::LoadSceneNFF(std::string sceneName) {
 			stream >> material.shine;
 			stream >> material.t;
 			stream >> material.ior;
+			continue;
+		}
+		else if (type == "p") {
+			triangle = new Triangle();
+			triangle->type = kObjectTriangle;
+			triangle->material = material;
+			stream >> triangleVertices;
+			readingTriangleInfo = true;
 			continue;
 		}
 		else if (type == "pl") {
