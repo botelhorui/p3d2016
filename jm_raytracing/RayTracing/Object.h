@@ -5,7 +5,7 @@
 #include "Ray.h"
 
 enum ObjectType {
-	kObjectCone, kObjectPlane, kObjectPolygon, kObjectPolygonPatch, kObjectSphere
+	kObjectPlane, kObjectSphere, kObjectTriangle
 };
 
 class Object{
@@ -15,7 +15,7 @@ class Object{
 
 		Object();
 		~Object();
-		virtual bool CalculateIntersection(Ray ray, float &distance, vec3 &intersectionPoint, vec3 &normalIntersection) = 0;
+		virtual bool CalculateIntersection(Ray ray, float &distance, vec3 &intersectionPoint, vec3 &normalIntersection);
 		//virtual vec3 CalculateNormal(const vec3 &intersectionPoint) = 0;
 };
 

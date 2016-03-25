@@ -57,6 +57,9 @@
     <ClCompile Include="Ray.cpp">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="Triangle.cpp">
+      <Filter>Objects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Scene.h">
@@ -96,6 +99,9 @@
       <Filter>Objects</Filter>
     </ClInclude>
     <ClInclude Include="Ray.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Triangle.h">
       <Filter>Objects</Filter>
     </ClInclude>
   </ItemGroup>

@@ -27,6 +27,7 @@ bool Plane::CalculateIntersection(Ray ray, float &distance, vec3 &intersectionPo
 	if (fabsf(dotNormalDirection) > kMaxDifference) { // Raio paralelo ao plano (perpendicular à normal)
 		currentDistance = -(normal.Dot(ray.origin) - normal.Dot(vertices[0])) / dotNormalDirection;
 
+		// Plano atrás do raio
 		if (currentDistance < 0) {
 			return intersection;
 		}
