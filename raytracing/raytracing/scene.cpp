@@ -138,39 +138,6 @@ Ray Scene::calculatePrimaryRay(int x, int y) {
 	return r;
 }
 
-glm::vec3 Scene::getColor(glm::vec3 viewDir, Material material, glm::vec3 point, glm::vec3 normal) {
-	// multiple lights sources
-	glm::vec3 lcolor(0, 0, 0);
-	for (auto & l : lights) {
-		// shadow feelers
-		// for each light calculate ray and call rayTracing
-		Ray r;
-		r.o = point;
-		r.d = glm::normalize(l.pos - r.o);
-		if (isShadow(r, l)) {
-			continue;
-		}
-		// if light is not blocked. calculate bling phong color
-
-		// ambient component (it is not defined in the nff file
-
-
-		// diffuse component
-		glm::vec3 lightDir = glm::normalize(l.pos - point);
-		float lambertian = glm::max(0.0f, glm::dot(lightDir, normal));
-		glm::vec3 diffuse = material.color * (material.Kd * lambertian);
-		lcolor += diffuse;
-
-		// specular component
-		glm::vec3 halfDir = glm::normalize(lightDir + viewDir);
-		float spec = glm::max(0.0f, glm::dot(halfDir, normal));
-		glm::vec3 specular = glm::vec3(1, 1, 1) * (material.Ks * pow(spec, material.Shine));
-		lcolor += specular;
-
-	}
-	//lcolor += material.color;
-	return lcolor;
-}
 
 bool Scene::isShadow(Ray &ray, Light& l) {
 	float lrdist = glm::length(l.pos - ray.o);
@@ -270,7 +237,7 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 	reflectRay.d = glm::normalize(reflect);
 	reflectRay.o += EPSILON * reflectRay.d;
 	// by experimenting Ks is the correct ratio to use............
-	glm::vec3 reflectColor = material.Ks * rayTracing(reflectRay, depth - 1, ior);
+	glm::vec3 reflectColor = rayTracing(reflectRay, depth - 1, ior);
 
 	//refraction
 	// https://en.wikipedia.org/wiki/Snell%27s_law#Vector_form
@@ -280,6 +247,7 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 	glm::vec3 v = viewDir;
 	glm::vec3 n = intersectionNormal;
 	float eta;
+	//if(intoInside)
 	if(intoInside)
 	{
 		// from outside object into inside
@@ -305,9 +273,9 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 	refractRay.d = refractDir;
 	refractRay.o = intersectionPoint;
 	refractRay.o += refractRay.d * EPSILON; //make sure ray start inside object
-	glm::vec3 refractColor = material.T * rayTracing(refractRay, depth - 1, material.ior);
+	glm::vec3 refractColor = rayTracing(refractRay, depth - 1, material.ior);
 
-	glm::vec3 globalColor = localColor + reflectColor + refractColor;
+	glm::vec3 globalColor = localColor + material.Ks * reflectColor + (1-material.Kd) * refractColor;
 	// We use material specular value as the mix percentage, because in example images
 	// the material with Kd == 0 is the only material that has no reflection
 	return  globalColor;

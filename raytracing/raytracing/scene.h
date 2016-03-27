@@ -8,7 +8,7 @@
 #ifndef SCENE
 #define SCENE
 
-#define EPSILON (float)1e-4
+#define EPSILON (float)1e-5
 
 class Light {
 public:
