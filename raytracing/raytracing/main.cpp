@@ -26,7 +26,9 @@
 #define VERTEX_COORD_ATTRIB 0
 #define COLOR_ATTRIB 1
 
+#define SCENE_FILE "mount_low.nff"
 #define MAX_DEPTH 6
+
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -364,7 +366,7 @@ void init(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	if (!scene.load_nff("mount_low.nff")) {
+	if (!scene.load_nff(SCENE_FILE)) {
 		printf("failed to load nff\n");
 		system("pause");
 		return 1;

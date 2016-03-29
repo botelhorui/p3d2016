@@ -146,7 +146,7 @@ bool Scene::isShadow(Ray &ray, Light& l) {
 	bool intoInside;
 	for (auto obj : objects) {
 		float dist = obj->intersectDistance(ray, minDist, intersection, normal, intoInside);
-		if (dist >= 0 && dist < lrdist) {
+		if (dist >= 0 ) {
 			return true;
 		}
 	}
@@ -237,13 +237,16 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 
 	if (material.Ks > 0.0f) {
 		// diffuse color from reflected ray
-		glm::vec3 reflect = glm::reflect(-viewDir, intersectionNormal);
+		
+		//calculate reflected ray
+		glm::vec3 rayToReflect = -ray.d;
+		glm::vec3 reflect = 2.0f * glm::dot(rayToReflect, intersectionNormal)*intersectionNormal - rayToReflect;
 		Ray reflectRay;
 		reflectRay.o = intersectionPoint;
 		reflectRay.d = glm::normalize(reflect);
 		reflectRay.o += EPSILON * reflectRay.d;
 		// by experimenting Ks is the correct ratio to use............
-		reflectColor = rayTracing(reflectRay, depth - 1, ior);
+		reflectColor = rayTracing(reflectRay, depth - 1, material.ior);
 	}
 
 	glm::vec3 refractColor;
@@ -254,7 +257,6 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 		// or professor slides
 		Ray refractRay;
 		glm::vec3 refractDir;
-		glm::vec3 v = viewDir;
 		glm::vec3 n = intersectionNormal;
 		float eta;
 		float tior;
@@ -274,7 +276,7 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 
 		eta = ior / tior;
 		// surface tangent vector
-		float dot = glm::dot(viewDir, intersectionNormal);
+		float dot = glm::dot(-ray.d, intersectionNormal);
 
 		if (ior > tior) {
 			float angle = glm::acos(dot);
@@ -285,7 +287,7 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 			}
 		}
 
-		glm::vec3 vt = glm::dot(viewDir, intersectionNormal)*intersectionNormal - viewDir;
+		glm::vec3 vt = glm::dot(-ray.d, intersectionNormal)*intersectionNormal -(- ray.d);
 		float sinTheta = glm::length(vt)*eta;
 		float cosTheta = glm::sqrt(1.0f - sinTheta*sinTheta);
 		glm::vec3 t = glm::normalize(vt);
@@ -297,29 +299,10 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 
 		refractColor = rayTracing(refractRay, depth - 1, material.ior);
 
-		if (false) {
-			// testing glm refract but it does not work
-			glm::vec3 refract = glm::normalize(glm::refract(v, n, eta));
-		}
-		else {
-			// surface tangent vector
-			float dot = glm::dot(viewDir, intersectionNormal);
-			if (ior > tior) {
-				float angle = glm::acos(dot);
-				float criticalAngle = glm::asin(tior / ior);
-				if (angle > criticalAngle) {
-					return localColor + material.Ks*reflectColor;
-				}
-			}
-			glm::vec3 vt = dot*intersectionNormal - viewDir;
-			float sinTheta = glm::length(vt)*eta;
-			float cosTheta = glm::sqrt(1.0f - sinTheta*sinTheta);
-			glm::vec3 t = glm::normalize(vt);
-			refractDir = glm::normalize(sinTheta*t - cosTheta*n);
-		}
+		
 	}
 
-	glm::vec3 globalColor = localColor + material.Ks * reflectColor + material.T * refractColor;
+	glm::vec3 globalColor = localColor + material.Ks * 0.3f * reflectColor + material.T * refractColor;
 	// We use material specular value as the mix percentage, because in example images
 	// the material with Kd == 0 is the only material that has no reflection
 	return  globalColor;

@@ -8,7 +8,7 @@
 #ifndef SCENE
 #define SCENE
 
-#define EPSILON (float)1e-3
+#define EPSILON (float)1e-5
 
 class Light {
 public:
@@ -41,8 +41,6 @@ public:
 	int load_nff(std::string path);
 
 	Ray calculatePrimaryRay(int x, int y);
-
-	glm::vec3 getColor(glm::vec3 viewDir, Material material, glm::vec3 point, glm::vec3 normal);
 
 	bool isShadow(Ray &ray, Light& l);
 
