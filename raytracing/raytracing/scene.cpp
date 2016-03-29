@@ -247,16 +247,17 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 	glm::vec3 v = viewDir;
 	glm::vec3 n = intersectionNormal;
 	float eta;
-	//if(intoInside)
+	float tior;
 	if(intoInside)
 	{
 		// from outside object into inside
-		eta = ior / material.ior;
+		tior = material.ior;
 	}else
 	{
 		// from inside object to outside
-		eta = ior / 1.0f;
-	}
+		tior = 1.0f;
+	}	
+	eta = ior / tior;
 	
 	if (false) {
 		// testing glm refract but it does not work
@@ -264,7 +265,15 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 	}
 	else {
 		// surface tangent vector
-		glm::vec3 vt = glm::dot(viewDir, intersectionNormal)*intersectionNormal - viewDir;
+		float dot = glm::dot(viewDir, intersectionNormal);
+		if(ior > tior){
+			float angle = glm::acos(dot);
+			float criticalAngle = glm::asin(tior/ior);
+			if (angle > criticalAngle){
+				return localColor + material.Ks*reflectColor;
+			}
+		}
+		glm::vec3 vt = dot*intersectionNormal - viewDir;
 		float sinTheta = glm::length(vt)*eta;
 		float cosTheta = glm::sqrt(1.0f - sinTheta*sinTheta);
 		glm::vec3 t = glm::normalize(vt);
@@ -275,7 +284,7 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 	refractRay.o += refractRay.d * EPSILON; //make sure ray start inside object
 	glm::vec3 refractColor = rayTracing(refractRay, depth - 1, material.ior);
 
-	glm::vec3 globalColor = localColor + material.Ks * reflectColor + (1-material.Kd) * refractColor;
+	glm::vec3 globalColor = localColor + material.Ks * reflectColor + material.T * refractColor;
 	// We use material specular value as the mix percentage, because in example images
 	// the material with Kd == 0 is the only material that has no reflection
 	return  globalColor;

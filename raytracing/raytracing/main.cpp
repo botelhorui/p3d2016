@@ -28,7 +28,8 @@
 
 #define MAX_DEPTH 6
 
-#define RAY_TRACING_DEPTH 5
+#define RAY_TRACING_DEPTH 4
+
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
 float *vertices;
