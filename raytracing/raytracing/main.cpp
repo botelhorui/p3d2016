@@ -364,7 +364,7 @@ void init(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	if (!scene.load_nff("balls_medium.nff")) {
+	if (!scene.load_nff("mount_low.nff")) {
 		printf("failed to load nff\n");
 		system("pause");
 		return 1;

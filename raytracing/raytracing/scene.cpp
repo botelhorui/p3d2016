@@ -182,7 +182,9 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 	bool intoInside = false;
 	Material material;
 	found = getIntersection(ray, material, minDist, intersectionPoint, intersectionNormal, intoInside);
-	if (!found) return backgroundColor;
+	if (!found) {
+		return backgroundColor;
+	}
 
 	// intersection found. compute color:
 	glm::vec3 viewDir = glm::normalize(ray.o - intersectionPoint);
@@ -226,6 +228,7 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 			localColor += specular;
 		}
 	}
+
 	if (depth == 1) {
 		return localColor;
 	}
@@ -254,17 +257,45 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 		glm::vec3 v = viewDir;
 		glm::vec3 n = intersectionNormal;
 		float eta;
+		float tior;
 		//if(intoInside)
 		if (intoInside)
 		{
 			// from outside object into inside
-			eta = ior / material.ior;
+			//eta = ior / material.ior;
+			tior = material.ior;
 		}
 		else
 		{
 			// from inside object to outside
-			eta = ior / 1.0f;
+			//eta = ior / 1.0f;
+			tior = 1.0f;
 		}
+
+		eta = ior / tior;
+		// surface tangent vector
+		float dot = glm::dot(viewDir, intersectionNormal);
+
+		if (ior > tior) {
+			float angle = glm::acos(dot);
+			float criticalAngle = glm::asin(tior / ior);
+
+			if (angle > criticalAngle) {
+				return localColor + material.Ks*reflectColor;
+			}
+		}
+
+		glm::vec3 vt = glm::dot(viewDir, intersectionNormal)*intersectionNormal - viewDir;
+		float sinTheta = glm::length(vt)*eta;
+		float cosTheta = glm::sqrt(1.0f - sinTheta*sinTheta);
+		glm::vec3 t = glm::normalize(vt);
+		refractDir = glm::normalize(sinTheta*t - cosTheta*n);
+
+		refractRay.d = refractDir;
+		refractRay.o = intersectionPoint;
+		refractRay.o += refractRay.d * EPSILON; //make sure ray start inside object
+
+		refractColor = rayTracing(refractRay, depth - 1, material.ior);
 
 		if (false) {
 			// testing glm refract but it does not work
@@ -272,17 +303,20 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 		}
 		else {
 			// surface tangent vector
-			glm::vec3 vt = glm::dot(viewDir, intersectionNormal)*intersectionNormal - viewDir;
+			float dot = glm::dot(viewDir, intersectionNormal);
+			if (ior > tior) {
+				float angle = glm::acos(dot);
+				float criticalAngle = glm::asin(tior / ior);
+				if (angle > criticalAngle) {
+					return localColor + material.Ks*reflectColor;
+				}
+			}
+			glm::vec3 vt = dot*intersectionNormal - viewDir;
 			float sinTheta = glm::length(vt)*eta;
 			float cosTheta = glm::sqrt(1.0f - sinTheta*sinTheta);
 			glm::vec3 t = glm::normalize(vt);
 			refractDir = glm::normalize(sinTheta*t - cosTheta*n);
 		}
-		refractRay.d = refractDir;
-		refractRay.o = intersectionPoint;
-		refractRay.o += refractRay.d * EPSILON; //make sure ray start inside object
-
-		refractColor = rayTracing(refractRay, depth - 1, material.ior);
 	}
 
 	glm::vec3 globalColor = localColor + material.Ks * reflectColor + material.T * refractColor;
