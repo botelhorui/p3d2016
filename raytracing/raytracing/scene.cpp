@@ -214,68 +214,78 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 			// specular component
 
 			// bling-phong imlementation
-			//vec3 halfDir = normalize(lightDir + viewDir);
-			//float spec = glm::max(0.0f, dot(halfDir, intersectionNormal));
+			glm::vec3 halfDir = glm::normalize(lightDir + viewDir);
+			float spec = glm::max(0.0f, glm::dot(halfDir, intersectionNormal));
 
 			// phong implementation
-			glm::vec3 l = lightDir;
-			glm::vec3 n = intersectionNormal;
-			glm::vec3 refl = (2 * glm::dot(n, l)*n) - l;
-			float spec = glm::max(0.0f, glm::dot(refl, viewDir));
-			glm::vec3 specular = material.color * (material.Ks * pow(spec, material.Shine));
+			//glm::vec3 l = lightDir;
+			//glm::vec3 n = intersectionNormal;
+			//glm::vec3 refl = (2 * glm::dot(n, l)*n) - l;
+			//float spec = glm::max(0.0f, glm::dot(refl, viewDir));
+			glm::vec3 specular = material.color * (material.Ks * 0.3f * pow(spec, material.Shine));
 			localColor += specular;
 		}
-
 	}
 	if (depth == 1) {
 		return localColor;
 	}
-	// diffuse color from reflected ray
-	glm::vec3 reflect = glm::reflect(-viewDir, intersectionNormal);
-	Ray reflectRay;
-	reflectRay.o = intersectionPoint;
-	reflectRay.d = glm::normalize(reflect);
-	reflectRay.o += EPSILON * reflectRay.d;
-	// by experimenting Ks is the correct ratio to use............
-	glm::vec3 reflectColor = rayTracing(reflectRay, depth - 1, ior);
 
-	//refraction
-	// https://en.wikipedia.org/wiki/Snell%27s_law#Vector_form
-	// or professor slides
-	Ray refractRay;
-	glm::vec3 refractDir;
-	glm::vec3 v = viewDir;
-	glm::vec3 n = intersectionNormal;
-	float eta;
-	//if(intoInside)
-	if(intoInside)
-	{
-		// from outside object into inside
-		eta = ior / material.ior;
-	}else
-	{
-		// from inside object to outside
-		eta = ior / 1.0f;
-	}
-	
-	if (false) {
-		// testing glm refract but it does not work
-		glm::vec3 refract = glm::normalize(glm::refract(v, n, eta));
-	}
-	else {
-		// surface tangent vector
-		glm::vec3 vt = glm::dot(viewDir, intersectionNormal)*intersectionNormal - viewDir;
-		float sinTheta = glm::length(vt)*eta;
-		float cosTheta = glm::sqrt(1.0f - sinTheta*sinTheta);
-		glm::vec3 t = glm::normalize(vt);
-		refractDir = glm::normalize(sinTheta*t -cosTheta*n);
-	}
-	refractRay.d = refractDir;
-	refractRay.o = intersectionPoint;
-	refractRay.o += refractRay.d * EPSILON; //make sure ray start inside object
-	glm::vec3 refractColor = rayTracing(refractRay, depth - 1, material.ior);
+	glm::vec3 reflectColor;
 
-	glm::vec3 globalColor = localColor + material.Ks * reflectColor + (1-material.Kd) * refractColor;
+	if (material.Ks > 0.0f) {
+		// diffuse color from reflected ray
+		glm::vec3 reflect = glm::reflect(-viewDir, intersectionNormal);
+		Ray reflectRay;
+		reflectRay.o = intersectionPoint;
+		reflectRay.d = glm::normalize(reflect);
+		reflectRay.o += EPSILON * reflectRay.d;
+		// by experimenting Ks is the correct ratio to use............
+		reflectColor = rayTracing(reflectRay, depth - 1, ior);
+	}
+
+	glm::vec3 refractColor;
+
+	if (material.T > 0.0f) {
+		//refraction
+		// https://en.wikipedia.org/wiki/Snell%27s_law#Vector_form
+		// or professor slides
+		Ray refractRay;
+		glm::vec3 refractDir;
+		glm::vec3 v = viewDir;
+		glm::vec3 n = intersectionNormal;
+		float eta;
+		//if(intoInside)
+		if (intoInside)
+		{
+			// from outside object into inside
+			eta = ior / material.ior;
+		}
+		else
+		{
+			// from inside object to outside
+			eta = ior / 1.0f;
+		}
+
+		if (false) {
+			// testing glm refract but it does not work
+			glm::vec3 refract = glm::normalize(glm::refract(v, n, eta));
+		}
+		else {
+			// surface tangent vector
+			glm::vec3 vt = glm::dot(viewDir, intersectionNormal)*intersectionNormal - viewDir;
+			float sinTheta = glm::length(vt)*eta;
+			float cosTheta = glm::sqrt(1.0f - sinTheta*sinTheta);
+			glm::vec3 t = glm::normalize(vt);
+			refractDir = glm::normalize(sinTheta*t - cosTheta*n);
+		}
+		refractRay.d = refractDir;
+		refractRay.o = intersectionPoint;
+		refractRay.o += refractRay.d * EPSILON; //make sure ray start inside object
+
+		refractColor = rayTracing(refractRay, depth - 1, material.ior);
+	}
+
+	glm::vec3 globalColor = localColor + material.Ks * reflectColor + material.T * refractColor;
 	// We use material specular value as the mix percentage, because in example images
 	// the material with Kd == 0 is the only material that has no reflection
 	return  globalColor;

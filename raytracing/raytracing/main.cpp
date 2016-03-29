@@ -28,7 +28,6 @@
 
 #define MAX_DEPTH 6
 
-#define RAY_TRACING_DEPTH 5
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
 float *vertices;
@@ -240,17 +239,14 @@ void renderScene()
 	glm::vec3 color;
 	Ray ray;
 	int y, x;
-	for (y = 0; y < RES_Y; y++)
-	//for (y = 100; y < 400; y++)
-	{
-		for (x = 0; x < RES_X; x++)
-		//for (x = 100; x < 400; x++)
-		{		    
+
+	for (y = 0; y < RES_Y; y++){
+		for (x = 0; x < RES_X; x++){		    
 			ray = scene.calculatePrimaryRay(x, y);
 			
 			//if (x == 152 && y == 248) {printf("oi\n");}else{continue;}
 			
-			color = scene.rayTracing(ray, RAY_TRACING_DEPTH, 1.0);
+			color = scene.rayTracing(ray, MAX_DEPTH, 1.0);
 
 			vertices[index_pos++]= (float)x;
 			vertices[index_pos++]= (float)y;
@@ -338,7 +334,7 @@ void setupGLUT(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
 	
-	glutInitContextVersion(3,1);
+	glutInitContextVersion(3,3);
 	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 
@@ -368,8 +364,8 @@ void init(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	if (!scene.load_nff("scene.nff")) {
-		printf("failed to loat nff\n");
+	if (!scene.load_nff("balls_medium.nff")) {
+		printf("failed to load nff\n");
 		system("pause");
 		return 1;
 	}
