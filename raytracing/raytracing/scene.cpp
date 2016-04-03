@@ -146,7 +146,7 @@ bool Scene::isShadow(Ray &ray, Light& l) {
 	bool intoInside;
 	for (auto obj : objects) {
 		float dist = obj->intersectDistance(ray, minDist, intersection, normal, intoInside);
-		if (dist >= 0 ) {
+		if (dist > 0 && dist < lrdist) {
 			return true;
 		}
 	}
@@ -224,7 +224,7 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 			//glm::vec3 n = intersectionNormal;
 			//glm::vec3 refl = (2 * glm::dot(n, l)*n) - l;
 			//float spec = glm::max(0.0f, glm::dot(refl, viewDir));
-			glm::vec3 specular = material.color * (material.Ks * 0.3f * pow(spec, material.Shine));
+			glm::vec3 specular = material.color * (material.Ks * pow(spec, material.Shine));
 			localColor += specular;
 		}
 	}
@@ -246,7 +246,7 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 		reflectRay.d = glm::normalize(reflect);
 		reflectRay.o += EPSILON * reflectRay.d;
 		// by experimenting Ks is the correct ratio to use............
-		reflectColor = rayTracing(reflectRay, depth - 1, material.ior);
+		reflectColor = rayTracing(reflectRay, depth - 1, ior);
 	}
 
 	glm::vec3 refractColor;
@@ -295,9 +295,9 @@ glm::vec3 Scene::rayTracing(Ray ray, int depth, float ior) {
 
 		refractRay.d = refractDir;
 		refractRay.o = intersectionPoint;
-		refractRay.o += refractRay.d * EPSILON; //make sure ray start inside object
+		refractRay.o += refractRay.d * EPSILON; //make sure ray start inside/outside object
 
-		refractColor = rayTracing(refractRay, depth - 1, material.ior);
+		refractColor = rayTracing(refractRay, depth - 1, tior);
 
 		
 	}

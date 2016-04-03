@@ -26,7 +26,7 @@
 #define VERTEX_COORD_ATTRIB 0
 #define COLOR_ATTRIB 1
 
-#define SCENE_FILE "mount_low.nff"
+#define SCENE_FILE "balls_medium.nff"
 #define MAX_DEPTH 6
 
 
@@ -49,7 +49,7 @@ Scene scene;
 int RES_X, RES_Y;
 
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
-int draw_mode=1; 
+int draw_mode=2; 
 
 int WindowHandle = 0;
 
@@ -246,10 +246,10 @@ void renderScene()
 		for (x = 0; x < RES_X; x++){		    
 			ray = scene.calculatePrimaryRay(x, y);
 			
-			//if (x == 152 && y == 248) {printf("oi\n");}else{continue;}
+			//if (x == 259 && y == 512-126) {printf("oi\n");}else{continue;}
 			
 			color = scene.rayTracing(ray, MAX_DEPTH, 1.0);
-
+			
 			vertices[index_pos++]= (float)x;
 			vertices[index_pos++]= (float)y;
 			colors[index_col++]= (float)color.r;

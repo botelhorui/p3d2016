@@ -1,63 +1,93 @@
 #pragma once
 #include <vector>
 #include <iostream>
+#include "vec.h"
 
-class vec3
+/*
+balls_low.nff",			//0
+balls_medium.nff",		//1
+balls_high.nff",		//2
+mount_low.nff",			//3
+mount_high.nff",		//4
+mount_very_high.nff"	//5
+*/
+#define SCENE_FILE 3
+//#define MAX_DEPTH 6
+#define MAX_DEPTH 6
+/* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame, 3 - full threaded */
+#define DRAW_MODE 3
+
+
+class Material
 {
-private:
-	float calcLength(float x,float y, float z)
-	{
-		return sqrt(x*x + y*y + z*z);
-	}
-public:
-	float length, x, y, z;
-	vec3():vec3(0,0,0){}
-	vec3(float v):vec3(v,v,v){}
-	vec3(float x, float y, float z):x(x),y(y),z(z),length(calcLength(x,y,z)){}
-};
-
-inline vec3 operator-(vec3 const & v0, vec3 const & v1) {
-	return vec3(v0.x - v1.x, v0.y - v1.y, v0.z - v1.z);
-}
-
-inline vec3 operator+(vec3 const & v0, vec3 const & v1) {
-	return vec3(v0.x + v1.x, v0.y + v1.y, v0.z + v1.z);
-}
-
-inline vec3 operator*(float const &f, vec3 const & v) {
-	return vec3(f*v.x, f*v.y, f*v.z);
-}
-
-inline vec3 operator-(vec3 const & v) {
-	return vec3(-v.x, -v.y, -v.z);
-}
-
-inline std::istream &operator>>(std::istream &i, vec3 &v) {
-	i >> v.x >> v.y >> v.z;
-	return i;
-}
-class Material {
 public:
 	vec3 color;
-	float Kd;
-	float Ks;
-	float Shine;
-	float T;
-	float ior;
+	double Kd;
+	double Ks;
+	double Shine;
+	double T;
+	double ior;
 };
+
+class Hit
+{
+public:
+	vec3 pos;
+	vec3 normal;
+	bool into_inside = false;
+	Material mat;
+	double dist = -1;
+	bool found = false;
+	bool isCloser(double newDist) const
+	{
+		return (dist == -1 || newDist < dist);
+	}
+	void updateMinHit(vec3& newPos, vec3& newNormal, bool newIntoInside,  Material & newMat, double& newDist)
+	{
+		if(newDist > 0 && (!found || newDist < dist))
+		{
+			pos = newPos;
+			normal = newNormal;
+			into_inside = newIntoInside;
+			mat = newMat;
+			dist = newDist;
+			found = true;
+		}
+	}
+};
+
 
 class Ray
 {
 public:
 	vec3 origin;
-	vec3 direction;
+	vec3 dir;
+	int depth;
+	double ior;
+
+	Ray()
+	{
+	}
+
+	Ray(vec3& origin, vec3 dir, int depth, double ior): origin(origin), dir(dir), depth(depth), ior(ior)
+	{
+	}
+
+	void offset(double x)
+	{
+		origin += dir * x;
+	}
 };
+
 class Light
 {
 public:
 	vec3 pos;
 	vec3 color;
-	Light(vec3 pos, vec3 color): pos(pos), color(color){}
+
+	Light(vec3 pos, vec3 color) : pos(pos), color(color)
+	{
+	}
 };
 
 class Camera
@@ -66,46 +96,61 @@ public:
 	vec3 from;
 	vec3 at;
 	vec3 up;
-	float angle;
-	float hither;
+	double angle;
+	double hither;
 	int res_x;
 	int res_y;
 };
 
-class Object
-{
-public:
-	Material material;
-	Object(Material mat):material(mat){}
-	virtual float calcIntersection(const Ray& ray, vec3& hPoint, vec3& nPoint, bool& intoInside) = 0;
-};
-class Plane: public Object
+class Plane
 {
 public:
 	vec3 normal;
-	float offset;
-	Plane(vec3 v0, vec3 v1, vec3 v2, Material mat);
-	float calcIntersection(const Ray& ray, vec3& hPoint, vec3& nPoint, bool& intoInside)override;
+	double offset;
+	Material mat;
+
+	Plane(vec3 v0, vec3 v1, vec3 v2, Material mat) : mat(mat)
+	{
+		normal = normalize(cross(v1 - v0, v2 - v0));
+		offset = -dot(v0, normal);
+	}
+
+	void calcIntersection(const Ray& ray, Hit& hit);
 };
 
-class Sphere: public Object
+class Sphere
 {
 public:
-	vec3 pos;
-	float radius;
-	Sphere(vec3 pos, float radius, Material mat) :pos(pos), radius(radius), Object(mat) {}
-	float calcIntersection(const Ray& ray, vec3& hPoint, vec3& nPoint, bool& intoInside) override;
+	vec3 center;
+	double radius;
+	Material mat;
+
+	Sphere(vec3 pos, double radius, Material mat) : center(pos), radius(radius), mat(mat)
+	{
+	}
+
+	void calcIntersection(const Ray& ray, Hit& hit);
 };
 
-class Triangle: public Object
+class Triangle
 {
 public:
-	vec3 v0, v1, v2;
+	vec3 p1, p2, p3;
 	vec3 normal;
-	float d;
-	Triangle(vec3 v0, vec3 v1, vec3 v2, Material mat);
-	float calcIntersection(const Ray& ray, vec3& hPoint, vec3& nPoint, bool& intoInside)override;
+	double d;
+	Material mat;
+
+	Triangle(vec3 v0, vec3 v1, vec3 v2, Material mat) :
+		mat(mat), p1(v0), p2(v1), p3(v2)
+	{
+		normal = normalize(cross(v1 - v0, v2 - v0));
+		// for each point P of the plane, P.N is constant
+		d = -dot(v0, normal);
+	}
+
+	void calcIntersection(const Ray& ray, Hit& hit);
 };
+
 
 class Scene
 {
@@ -116,13 +161,18 @@ public:
 	std::vector<Plane> planes;
 	std::vector<Sphere> spheres;
 	std::vector<Triangle> triangles;
-	std::vector<Object*> objects;
+	// code to use in case we only want one for to interate over all objects
+	//typedef double(*calcIntersection)(const Ray&, vec3&, vec3&, bool&);
+	//std::vector<calcIntersection> calls;
 
 	int load_nff(std::string path);
-	Ray calculatePrimaryRay(int x, int y);
-	float calcIntersection(const Ray & ray, Object *& hitObject, vec3 & minHitPoint, vec3 & minNormalPoint, bool & minIntoInside);
-	vec3 calcLocalColor(Ray ray, Object* object);
-	vec3 calcReflectColor(Ray ray, Object* object);
-	vec3 calcRefractColor(Ray ray, Object* object);
-	vec3 rayTrace(Ray ray, int depth, float ior = 1.0f);
+	Ray calculate_primary_ray(int x, int y);
+
+	vec3 calc_reflect_color(Ray ray, Hit& hit);
+	vec3 calc_local_color(Ray& ray, Hit& hit);
+	void calc_shadow_intersections(Ray& ray, Hit& hit);
+	vec3 calc_refract_color(Ray ray, Hit& hit);
+	void calc_intersection(Ray& ray, Hit& hit);
+	vec3 ray_trace(Ray ray);
 };
+

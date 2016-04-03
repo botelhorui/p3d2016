@@ -4,53 +4,56 @@
 
 int Scene::load_nff(std::string path)
 {
-	std::ifstream file;
-	file.open(path);
+	std::ifstream f;
+	f.open(path);
 	Material lastMat;
 	std::string type;
-	while (!file.eof())
+	while (!f.eof())
 	{
-		file >> type;
+		f >> type;
 		if (type == "b")
 		{
-			file >> backgroundColor;
+			f >> backgroundColor;
 		}
 		else if (type == "v")
 		{
-			file >> type >> camera.from;
-			file >> type >> camera.at;
-			file >> type >> camera.up;
-			file >> type >> camera.angle;
-			file >> type >> camera.hither;
-			file >> type >> camera.res_x >> camera.res_y;
+			f >> type >> camera.from;
+			f >> type >> camera.at;
+			f >> type >> camera.up;
+			f >> type >> camera.angle;
+			f >> type >> camera.hither;
+			f >> type >> camera.res_x >> camera.res_y;
 		}
 		else if (type == "l")
 		{
 			vec3 pos, color;
-			file >> pos >> color;
+			f >> pos >> color;
 			lights.push_back(Light(pos, color));
 		}
 		else if (type == "f")
 		{
-			file >> lastMat.color >> lastMat.Kd >> lastMat.Ks >>
-				lastMat.Shine >> lastMat.T >> lastMat.ior;
+			f >> lastMat.color >> lastMat.Kd >> lastMat.Ks >> lastMat.Shine >> lastMat.T >> lastMat.ior;
 		}
 		else if (type == "pl")
 		{
 			vec3 v0, v1, v2;
-			file >> v0 >> v1 >> v2;
-			objects.push_back(new Plane(v0, v1, v2, lastMat));
+			f >> v0 >> v1 >> v2;
+			planes.push_back(Plane(v0, v1, v2, lastMat));
 		}
 		else if (type == "s")
 		{
 			vec3 pos;
-			float radius;
-			file >> pos >> radius;
-			objects.push_back(new Sphere(pos, radius, lastMat));
+			double radius;
+			f >> pos >> radius;
+			spheres.push_back(Sphere(pos, radius, lastMat));
 		}
 		else if (type == "p")
 		{
-
+			int numVertices;
+			f >> numVertices;
+			vec3 v0, v1, v2;
+			f >> v0 >> v1 >> v2;
+			triangles.push_back(Triangle(v0, v1, v2, lastMat));
 		}
 		else
 		{
@@ -60,5 +63,9 @@ int Scene::load_nff(std::string path)
 		}
 	}
 	printf("number of lights %d\n", lights.size());
+	printf("number of planes %d\n", planes.size());
+	printf("number of spheres %d\n", spheres.size());
+	printf("number of triangles %d\n", triangles.size());
 	return 0;
 }
+

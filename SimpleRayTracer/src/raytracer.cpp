@@ -3,149 +3,178 @@
 #include <string>
 #define _USE_MATH_DEFINES
 #include <math.h>
-vec3 normalize(vec3 v)
+#include <algorithm>
+
+vec3 reflect(const vec3& normal, const vec3& incident)
 {
-	float l = v.length;
-	return vec3(v.x / l, v.y / l, v.z / l);
+	const double cosI = -dot(normal, incident);
+	return incident + 2 * cosI*normal;
 }
 
-vec3 cross(vec3 x, vec3 y)
+bool refract(const vec3 normal, const vec3& incident, double n1, double n2, vec3& reflect_dir)
 {
-	return vec3(
-		x.y * y.z - y.y * x.z,
-		x.z * y.x - y.z * x.x,
-		x.x * y.y - y.x * x.y);
-}
-float dot(vec3 v0, vec3 v1)
-{
-	return v0.x*v1.x +
-		v0.y*v1.y +
-		v0.z*v1.z;
+	const double n = n1 / n2;
+	const double cosI = -dot(normal, incident);
+	const double sinT2 = n * n * (1.0 - cosI*cosI);
+	if (sinT2 > 1.0) return false; // TIR
+	const double cosT = sqrt(1.0 - sinT2);
+	reflect_dir = n * incident + (n*cosI - cosT) * normal;
+	reflect_dir = normalize(reflect_dir);
+	return true;
 }
 
-
-Plane::Plane(vec3 v0, vec3 v1, vec3 v2, Material mat):Object(mat)
-{
-	normal = normalize(cross(v1 - v0, v2 - v0));
-	offset = -dot(v0, normal);
-}
-float Plane::calcIntersection(const Ray& ray, vec3& hPoint, vec3& nPoint, bool& intoInside)
-{
-	float denom = dot(normal, ray.direction);
-	float t = -1;
-	if(abs(denom) > 0)
-	{
-		t = -(offset + dot(ray.origin,normal)) / denom;
-		if(t > 0)
-		{
-			hPoint = ray.origin + t*ray.direction;
-			if(denom > 0)
-			{
-				nPoint = -normal; //if ray is under the plane
-			}else
-			{
-				nPoint = normal;
-			}
-		}
-	}
-	intoInside = false;
-	return t;
-}
-float Sphere::calcIntersection(const Ray& ray, vec3& hPoint, vec3& nPoint, bool& intoInside)
-{
-	return -1;
-}
-Triangle::Triangle(vec3 v0, vec3 v1, vec3 v2, Material mat):
-	Object(mat),v0(v0), v1(v1), v2(v2)  {
-	normal = normalize(cross(v1 - v0, v2 - v0));
-	// for each point P of the plane, P.N is constant
-	d = -dot(v0, normal);
-}
-
-
-
-float Triangle::calcIntersection(const Ray& ray, vec3& hPoint, vec3& nPoint, bool& intoInside)
-{
-	return -1;
-}
-
-
-Ray Scene::calculatePrimaryRay(int x, int y)
+Ray Scene::calculate_primary_ray(int x, int y)
 {
 	// from "2 - Ray_Tracing_Practice.pdf"
 	// page 20
 	Ray r;
-	float df; //distance to frame
-	float h; // frame height
-	float w; // frame width
+	double df; //distance to frame
+	double h; // frame height
+	double w; // frame width
 	vec3 xe, ye, ze; // camera space
 	ze = camera.from - camera.at;
 	df = ze.length;
 	ze = normalize(ze);
-	float angle; // half of the field of view
-	angle = ((float)M_PI / 180.0f)*(camera.angle / 2.0f);
+	double angle; // half of the field of view
+	angle = (M_PI / 180.0) * (camera.angle / 2.0);
 	h = 2 * df * tan(angle);
 	w = (camera.res_x * h) / camera.res_y; // height * ratio
 	xe = normalize(cross(camera.up, ze));
 	ye = normalize(cross(ze, xe));
 	r.origin = camera.from;
-	r.direction = (w * ((1.0f * x) / camera.res_x - .5f))* xe +
-		(h * ((1.0f * y) / camera.res_y - .5f))* ye +
+	r.dir = (w * ((1.0 * x) / camera.res_x - .5)) * xe +
+		(h * ((1.0 * y) / camera.res_y - .5)) * ye +
 		(-df) * ze;
-	r.direction = normalize(r.direction);
+	r.dir = normalize(r.dir);
 	return r;
 }
 
-float Scene::calcIntersection(const Ray& ray, Object* & hitObject, vec3& minHitPoint, vec3& minNormalPoint, bool& minIntoInside)
+
+vec3 Scene::calc_refract_color(Ray ray, Hit& hit)
 {
-	float minDist = -1;
-	for (auto obj : objects)
+	if(hit.mat.T <= 0.0)
 	{
-		vec3 hPoint, nPoint;
-		bool intoInside;
-		float dist = obj->calcIntersection(ray, hPoint, nPoint, intoInside);
-		if (dist > 0 && (minDist == -1 || dist < minDist))
-		{
-			minDist = dist;
-			minHitPoint = hPoint;
-			minNormalPoint = nPoint;
-			minIntoInside = intoInside;
-			hitObject = obj;
-		}
+		return vec3();
 	}
-	return minDist;
-}
-
-vec3 Scene::calcRefractColor(Ray ray, Object* object)
-{
-}
-
-vec3 Scene::calcReflectColor(Ray ray, Object* object)
-{
-}
-
-vec3 Scene::calcLocalColor(Ray ray, Object * object)
-{
+	float ior = hit.mat.ior;
+	if(!hit.into_inside)
+	{
+		ior = 1.0;
+	}
+	vec3 refract_dir;
+	if(refract(hit.normal, ray.dir, ray.ior, ior, refract_dir))
+	{
+		Ray refractRay(hit.pos, refract_dir, ray.depth - 1, ior);
+		refractRay.offset(EPSILON);
+		return ray_trace(refractRay);
+	}
 	return vec3();
+
+		
+	
 }
 
-vec3 Scene::rayTrace(Ray ray, int depth, float ior)
+vec3 Scene::calc_reflect_color(Ray ray, Hit& hit)
 {
-	if (depth == 0) {
+	
+	if (hit.mat.Ks <= 0.0f)
+	{
+		return vec3(0, 0, 0);
+	}
+	vec3 reflectDir = reflect(hit.normal, ray.dir);
+	Ray reflectRay(hit.pos, reflectDir, ray.depth - 1, ray.ior);
+	reflectRay.offset(EPSILON);
+	return ray_trace(reflectRay);
+}
+
+void Scene::calc_shadow_intersections(Ray& ray, Hit& hit)
+{
+	for (auto& obj : planes)
+	{
+		obj.calcIntersection(ray, hit);
+		//if (hit.dist > 0) return;
+	}
+	for (auto& obj : spheres)
+	{
+		obj.calcIntersection(ray, hit);
+		//if (hit.dist > 0) return;
+	}
+	for (auto& obj : triangles)
+	{
+		obj.calcIntersection(ray, hit);
+		//if (hit.dist > 0) return;
+	}
+}
+
+vec3 Scene::calc_local_color(Ray& ray, Hit& hit)
+{
+	vec3 localColor(0, 0, 0);
+	for (auto& light: lights)
+	{
+		Hit shadow_hit;
+		vec3 light_vec = light.pos - hit.pos;
+		vec3 light_dir = normalize(light_vec);
+		Ray shadow_ray(hit.pos, light_dir, 0, 0.0);
+		shadow_ray.offset(EPSILON);
+		calc_shadow_intersections(shadow_ray, shadow_hit);
+		if (shadow_hit.dist > 0 && shadow_hit.dist < light_vec.length)
+		{
+			continue;
+		}
+		vec3 diffuseColor, specularcolor;
+		double lambertian = dot(light_dir, hit.normal);
+		if (lambertian > 0.0f)
+		{
+			diffuseColor = hit.mat.color * hit.mat.Kd * lambertian;
+			//specular
+			vec3 viewDir = normalize(ray.origin - hit.pos);
+			vec3 halfDir = normalize(light_dir + viewDir);
+			double specAngle = dot(halfDir, hit.normal);
+			double specular = pow(specAngle, hit.mat.Shine * 1.f);
+			if (specular > 0.0f)
+			{
+				//specularcolor = hit.mat.color * hit.mat.Ks * specular * 0.6f;
+				specularcolor = vec3(1.f) * hit.mat.Ks * specular * 0.3f;
+			}
+		}
+		localColor +=  diffuseColor + specularcolor;
+	}
+	return localColor;
+}
+
+
+void Scene::calc_intersection(Ray& ray, Hit& hit)
+{
+	for (auto& obj : planes)
+	{
+		obj.calcIntersection(ray, hit);
+	}
+	for (auto& obj : spheres)
+	{
+		obj.calcIntersection(ray, hit);
+	}
+	for (auto& obj : triangles)
+	{
+		obj.calcIntersection(ray, hit);
+	}
+}
+
+vec3 Scene::ray_trace(Ray ray)
+{
+	if (ray.depth == 0)
+	{
 		return vec3(0);
 	}
-	float minDist = -1;
-	vec3 minHitPoint;
-	vec3 minNormalPoint;
-	bool minIntoInside;
-	Object* hitObject = nullptr;
-	minDist = calcIntersection(ray, hitObject, minHitPoint, minNormalPoint, minIntoInside);	
-	if(minDist == -1)
+	Hit hit;
+	calc_intersection(ray, hit);
+	if (hit.dist == -1)
 	{
 		return backgroundColor;
 	}
-	vec3 localColor = calcLocalColor(ray, hitObject);
-	vec3 reflectColor = calcReflectColor(ray, hitObject);
-	vec3 refractColor = calcRefractColor(ray, hitObject);
-	return localColor + reflectColor + refractColor;
+	vec3 local_color = calc_local_color(ray, hit);
+	vec3 reflect_color = calc_reflect_color(ray, hit);
+	vec3 refract_color = calc_refract_color(ray, hit);
+
+	return local_color + hit.mat.Ks * reflect_color + hit.mat.T * refract_color;
 }
+

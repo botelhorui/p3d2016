@@ -23,25 +23,28 @@
 #include "raytracer.h"
 #include <algorithm>
 
-#define CAPTION "ray tracer"
+const char* scene_files[] = {
+	"scenes/balls_low.nff", //0
+	"scenes/balls_medium.nff", //1
+	"scenes/balls_high.nff", //2
+	"scenes/mount_low.nff", //3
+	"scenes/mount_high.nff", //4
+	"scenes/mount_very_high.nff" //5
+};
+const char* scene_file = scene_files[SCENE_FILE];
 
+#define CAPTION "ray tracer"
 #define VERTEX_COORD_ATTRIB 0
 #define COLOR_ATTRIB 1
 
-#define SCENE_FILE "scenes/balls_low.nff"
-
-//#define MAX_DEPTH 6
-#define MAX_DEPTH 1
-
-
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
-float *colors;
-float *vertices;
+float* colors;
+float* vertices;
 
 int size_vertices;
 int size_colors;
 
-GLfloat m[16];  //projection matrix initialized by ortho function
+GLfloat m[16]; //projection matrix initialized by ortho function
 
 GLuint VaoId;
 GLuint VboId[2];
@@ -52,22 +55,21 @@ GLint UniformId;
 Scene scene;
 int RES_X, RES_Y;
 
-/* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame, 3 - full threaded */
-int draw_mode = 2;
 
 int WindowHandle = 0;
 
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
 
-
 /////////////////////////////////////////////////////////////////////// ERRORS
 
-bool isOpenGLError() {
+bool isOpenGLError()
+{
 	bool isError = false;
 	GLenum errCode;
-	const GLubyte *errString;
-	while ((errCode = glGetError()) != GL_NO_ERROR) {
+	const GLubyte* errString;
+	while ((errCode = glGetError()) != GL_NO_ERROR)
+	{
 		isError = true;
 		errString = gluErrorString(errCode);
 		std::cerr << "OpenGL ERROR [" << errString << "]." << std::endl;
@@ -77,11 +79,13 @@ bool isOpenGLError() {
 
 void checkOpenGLError(std::string error)
 {
-	if (isOpenGLError()) {
+	if (isOpenGLError())
+	{
 		std::cerr << error << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
+
 /////////////////////////////////////////////////////////////////////// SHADERs
 const GLchar* VertexShader =
 {
@@ -124,7 +128,8 @@ void createShaderProgram()
 	glCompileShader(VertexShaderId);
 
 	glGetShaderInfoLog(VertexShaderId, 1000, &n, buffer);
-	printf("%d nc log: %s\n", n, buffer);
+	if (n > 0)
+		printf("%d nc log: %s\n", n, buffer);
 	n = 0;
 
 	FragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
@@ -133,7 +138,8 @@ void createShaderProgram()
 
 
 	glGetShaderInfoLog(VertexShaderId, 1000, &n, buffer);
-	printf("%d nc log: %s\n", n, buffer);
+	if (n > 0)
+		printf("%d nc log: %s\n", n, buffer);
 	n = 0;
 
 
@@ -148,12 +154,12 @@ void createShaderProgram()
 	UniformId = glGetUniformLocation(ProgramId, "Matrix");
 
 	glGetProgramInfoLog(ProgramId, 1000, &n, buffer);
-	printf("%d nc log: %s\n", n, buffer);
+	if (n > 0)
+		printf("%d nc log: %s\n", n, buffer);
 	n = 0;
 
 
 	checkOpenGLError("ERROR: Could not create shaders.");
-
 }
 
 void destroyShaderProgram()
@@ -168,6 +174,7 @@ void destroyShaderProgram()
 
 	checkOpenGLError("ERROR: Could not destroy shaders.");
 }
+
 /////////////////////////////////////////////////////////////////////// VAOs & VBOs
 void createBufferObjects()
 {
@@ -218,7 +225,7 @@ void drawPoints()
 	glBufferData(GL_ARRAY_BUFFER, size_colors, colors, GL_DYNAMIC_DRAW);
 
 	glUniformMatrix4fv(UniformId, 1, GL_FALSE, m);
-	glDrawArrays(GL_POINTS, 0, RES_X*RES_Y);
+	glDrawArrays(GL_POINTS, 0, RES_X * RES_Y);
 	glFinish();
 
 	glUseProgram(0);
@@ -239,7 +246,7 @@ void drawPoints(float* vertices, int size_vertices, float* colors, int size_colo
 	glBufferData(GL_ARRAY_BUFFER, size_colors, colors, GL_DYNAMIC_DRAW);
 
 	glUniformMatrix4fv(UniformId, 1, GL_FALSE, m);
-	glDrawArrays(GL_POINTS, 0, RES_X*RES_Y);
+	glDrawArrays(GL_POINTS, 0, RES_X * RES_Y);
 	glFinish();
 
 	glUseProgram(0);
@@ -256,41 +263,45 @@ bool alreadyRendered = false;
 
 void threadedRenderScene()
 {
-	int x, y;
-#pragma omp parallel private(x)
+#pragma omp parallel
 	{
+		int x, y;
 #pragma omp master
 		printf("num threads %d\n", omp_get_num_threads());
 #pragma omp for
-		for (y = 0; y < RES_Y; y++) {
-			for (x = 0; x < RES_X; x++) {
-				Ray ray = scene.calculatePrimaryRay(x, y);
-				vec3 color;				
-				color = scene.rayTrace(ray, MAX_DEPTH);
-				int vertice_i= std::max(0,y - 1)*RES_X * 2 + x * 2;
-				int color_i = std::max(0,y - 1)*RES_X * 3 + x * 3;
+		for (y = 0; y < RES_Y; y++)
+		{
+			for (x = 0; x < RES_X; x++)
+			{
+				Ray ray = scene.calculate_primary_ray(x, y);
+				ray.depth = MAX_DEPTH;
+				ray.ior = 1.0f;
+				vec3 color = scene.ray_trace(ray);
+				int vertice_i = std::max(0, y - 1) * RES_X * 2 + x * 2;
+				int color_i = std::max(0, y - 1) * RES_X * 3 + x * 3;
 				vertices[vertice_i] = (float)x;
-				vertices[vertice_i+1] = (float)y;
+				vertices[vertice_i + 1] = (float)y;
 				colors[color_i] = (float)color.x;
-				colors[color_i+1] = (float)color.y;
-				colors[color_i+2] = (float)color.z;
+				colors[color_i + 1] = (float)color.y;
+				colors[color_i + 2] = (float)color.z;
 			}
 		}
-					
 	}
 	drawPoints();
 }
 
 void renderScene()
 {
-	if (alreadyRendered) {
+	if (alreadyRendered)
+	{
 		return;
 	}
-	else {
+	else
+	{
 		alreadyRendered = true;
-	}	
+	}
 	double start = omp_get_wtime();
-	if(draw_mode == 3)
+	if (DRAW_MODE == 3)
 	{
 		threadedRenderScene();
 		printf("Terminou! em %f\n", omp_get_wtime() - start);
@@ -303,37 +314,43 @@ void renderScene()
 	Ray ray;
 	int y, x;
 
-	for (y = 0; y < RES_Y; y++) {
-		for (x = 0; x < RES_X; x++) {
-			ray = scene.calculatePrimaryRay(x, y);
+	for (y = 0; y < RES_Y; y++)
+	{
+		for (x = 0; x < RES_X; x++)
+		{
+			ray = scene.calculate_primary_ray(x, y);
+			ray.depth = MAX_DEPTH;
+			ray.ior = 1.0f;
 			//if (x == 259 && y == 512-126) {printf("oi\n");}else{continue;}
-			color = scene.rayTrace(ray, MAX_DEPTH);
+			color = scene.ray_trace(ray);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
 			colors[index_col++] = (float)color.x;
 			colors[index_col++] = (float)color.y;
-			colors[index_col++] = (float)color.z;		
+			colors[index_col++] = (float)color.z;
 
 
-			if (draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
+			if (DRAW_MODE == 0)
+			{ // desenhar o conteúdo da janela ponto a ponto
 				drawPoints();
 				index_pos = 0;
 				index_col = 0;
 			}
 		}
 		//printf("line %d\n", y);
-		if (draw_mode == 1) {  // desenhar o conteúdo da janela linha a linha
+		if (DRAW_MODE == 1)
+		{ // desenhar o conteúdo da janela linha a linha
 			drawPoints();
 			index_pos = 0;
 			index_col = 0;
 		}
 	}
 
-	if (draw_mode == 2) //preenchar o conteúdo da janela com uma imagem completa
+	if (DRAW_MODE == 2) //preenchar o conteúdo da janela com uma imagem completa
 		drawPoints();
 
-	printf("Terminou! em %f\n", omp_get_wtime()-start);
+	printf("Terminou! em %f\n", omp_get_wtime() - start);
 }
 
 void cleanup()
@@ -343,7 +360,7 @@ void cleanup()
 }
 
 void ortho(float left, float right, float bottom, float top,
-	float nearp, float farp)
+           float nearp, float farp)
 {
 	m[0 * 4 + 0] = 2 / (right - left);
 	m[0 * 4 + 1] = 0.0;
@@ -378,10 +395,12 @@ void setupCallbacks()
 	glutReshapeFunc(reshape);
 }
 
-void setupGLEW() {
+void setupGLEW()
+{
 	glewExperimental = GL_TRUE;
 	GLenum result = glewInit();
-	if (result != GLEW_OK) {
+	if (result != GLEW_OK)
+	{
 		std::cerr << "ERROR glewInit: " << glewGetString(result) << std::endl;
 		exit(EXIT_FAILURE);
 	}
@@ -407,7 +426,8 @@ void setupGLUT(int argc, char* argv[])
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);
 	glDisable(GL_DEPTH_TEST);
 	WindowHandle = glutCreateWindow(CAPTION);
-	if (WindowHandle < 1) {
+	if (WindowHandle < 1)
+	{
 		std::cerr << "ERROR: Could not create a new rendering window." << std::endl;
 		exit(EXIT_FAILURE);
 	}
@@ -426,7 +446,8 @@ void init(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	if (scene.load_nff(SCENE_FILE)) {
+	if (scene.load_nff(scene_file))
+	{
 		printf("failed to load nff\n");
 		system("pause");
 		return 1;
@@ -435,27 +456,32 @@ int main(int argc, char* argv[])
 	RES_X = scene.camera.res_x;
 	RES_Y = scene.camera.res_y;
 
-	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
+	if (DRAW_MODE == 0)
+	{ // desenhar o conteúdo da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);
 		size_colors = 3 * sizeof(float);
 		printf("DRAWING MODE: POINT BY POINT\n");
 	}
-	else if (draw_mode == 1) { // desenhar o conteúdo da janela linha a linha
-		size_vertices = 2 * RES_X*sizeof(float);
-		size_colors = 3 * RES_X*sizeof(float);
+	else if (DRAW_MODE == 1)
+	{ // desenhar o conteúdo da janela linha a linha
+		size_vertices = 2 * RES_X * sizeof(float);
+		size_colors = 3 * RES_X * sizeof(float);
 		printf("DRAWING MODE: LINE BY LINE\n");
 	}
-	else if (draw_mode == 2) { // preencher o conteúdo da janela com uma imagem completa
-		size_vertices = 2 * RES_X*RES_Y*sizeof(float);
-		size_colors = 3 * RES_X*RES_Y*sizeof(float);
+	else if (DRAW_MODE == 2)
+	{ // preencher o conteúdo da janela com uma imagem completa
+		size_vertices = 2 * RES_X * RES_Y * sizeof(float);
+		size_colors = 3 * RES_X * RES_Y * sizeof(float);
 		printf("DRAWING MODE: FULL IMAGE\n");
-	} else if (draw_mode == 3) // use omp to draw image at once
+	}
+	else if (DRAW_MODE == 3) // use omp to draw image at once
 	{
-		size_vertices = 2 * RES_X*RES_Y*sizeof(float);
-		size_colors = 3 * RES_X*RES_Y*sizeof(float);
+		size_vertices = 2 * RES_X * RES_Y * sizeof(float);
+		size_colors = 3 * RES_X * RES_Y * sizeof(float);
 		printf("DRAWING MODE: FULL IMAGE WITH THREADS\n");
 	}
-	else {
+	else
+	{
 		printf("Draw mode not valid \n");
 		exit(0);
 	}
@@ -471,4 +497,7 @@ int main(int argc, char* argv[])
 	glutMainLoop();
 	exit(EXIT_SUCCESS);
 }
+
 ///////////////////////////////////////////////////////////////////////
+
+
