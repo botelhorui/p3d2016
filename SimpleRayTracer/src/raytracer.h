@@ -3,19 +3,20 @@
 #include <iostream>
 #include "vec.h"
 
-/*
-balls_low.nff",			//0
-balls_medium.nff",		//1
-balls_high.nff",		//2
-mount_low.nff",			//3
-mount_high.nff",		//4
-mount_very_high.nff"	//5
+/*					Mode:		2		3
+balls_low.nff",			//0		
+balls_medium.nff",		//1		1.6
+balls_high.nff",		//2		126		
+mount_low.nff",			//3		0.5
+mount_high.nff",		//4		81.8	20
+mount_very_high.nff"	//5		?		400
 */
-#define SCENE_FILE 3
+#define SCENE_FILE 5
 //#define MAX_DEPTH 6
 #define MAX_DEPTH 6
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame, 3 - full threaded */
-#define DRAW_MODE 3
+#define DRAW_MODE 2
+
 
 
 class Material

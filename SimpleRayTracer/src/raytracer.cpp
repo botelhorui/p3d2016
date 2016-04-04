@@ -5,12 +5,13 @@
 #include <math.h>
 #include <algorithm>
 
+// TODO merge reflect refract and rSchlick2
 vec3 reflect(const vec3& normal, const vec3& incident)
 {
 	const double cosI = -dot(normal, incident);
 	return incident + 2 * cosI*normal;
 }
-
+// TODO merge reflect refract and rSchlick2
 bool refract(const vec3 normal, const vec3& incident, double n1, double n2, vec3& reflect_dir)
 {
 	const double n = n1 / n2;
@@ -22,6 +23,23 @@ bool refract(const vec3 normal, const vec3& incident, double n1, double n2, vec3
 	reflect_dir = normalize(reflect_dir);
 	return true;
 }
+// TODO merge reflect refract and rSchlick2
+double rSchlick2(const vec3& normal, const vec3& incident, double n1, double n2)
+{
+	double r0 = (n1 - n2) / (n1 + n2);
+	r0 *= r0;
+	double cosX = -dot(normal, incident);
+	if(n1 > n2)
+	{
+		const double n = n1 / n2;
+		const double sinT2 = n*n*(1.0 - cosX*cosX);
+		if (sinT2 > 1.0) return 1.0; //TIR
+		cosX = sqrt(1.0 - sinT2);
+	}
+	const double x = 1.0 - cosX;
+	return r0 + (1.0 - r0) * x * x * x * x * x;
+}
+
 
 Ray Scene::calculate_primary_ray(int x, int y)
 {
@@ -68,9 +86,9 @@ vec3 Scene::calc_refract_color(Ray ray, Hit& hit)
 		refractRay.offset(EPSILON);
 		return ray_trace(refractRay);
 	}
-	return vec3();
-
-		
+		// Total internal reflection
+		return vec3();
+	
 	
 }
 
@@ -172,9 +190,12 @@ vec3 Scene::ray_trace(Ray ray)
 		return backgroundColor;
 	}
 	vec3 local_color = calc_local_color(ray, hit);
+
+	double reflectance = rSchlick2(hit.normal, ray.dir, ray.ior, hit.mat.ior);
+	double transmitance = 1.0 - reflectance;
 	vec3 reflect_color = calc_reflect_color(ray, hit);
 	vec3 refract_color = calc_refract_color(ray, hit);
+	return local_color + (1.0 - hit.mat.T) * reflect_color + hit.mat.T * refract_color;
+	//return local_color + reflectance * reflect_color + transmitance * refract_color;
 
-	return local_color + hit.mat.Ks * reflect_color + hit.mat.T * refract_color;
 }
-

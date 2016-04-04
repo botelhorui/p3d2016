@@ -268,7 +268,7 @@ void threadedRenderScene()
 		int x, y;
 #pragma omp master
 		printf("num threads %d\n", omp_get_num_threads());
-#pragma omp for
+#pragma omp for schedule(dynamic)
 		for (y = 0; y < RES_Y; y++)
 		{
 			for (x = 0; x < RES_X; x++)
