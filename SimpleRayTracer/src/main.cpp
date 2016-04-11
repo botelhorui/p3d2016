@@ -306,8 +306,8 @@ vec3 calculateSecondaryRays(int divisions, float x, float y, vec3 colorPixelsPre
 		}
 	}
 
-	for each (vec3 colorPixel in colorPixelsPrevious) {
-		color += colorPixel;
+	for (int i = 0; i < 4; i++){
+		color += colorPixelsPrevious[index][i];
 	}
 
 	color.x /= 4.0f;
@@ -325,10 +325,7 @@ vec3 calculateSecondaryRays(int divisions, float x, float y, vec3 colorPixelsPre
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.5f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
-
-	for (int i = 0; i < 4; i++) {
-		colorPixels[i][1] = scene.ray_trace(ray);
-	}
+	colorPixels[0][1] = colorPixels[1][1] = colorPixels[2][1] = colorPixels[3][1] = scene.ray_trace(ray);
 
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.0f);
 	ray.depth = MAX_DEPTH;
@@ -352,10 +349,10 @@ vec3 calculateSecondaryRays(int divisions, float x, float y, vec3 colorPixelsPre
 
 	divisions++;
 
-	color += calculateSecondaryRays(divisions, x - 0.5f * divisions, y + 0.5f * divisions, colorPixels, 0);
-	color += calculateSecondaryRays(divisions, x - 0.5f * divisions, y - 0.5f * divisions, colorPixels, 1);
-	color += calculateSecondaryRays(divisions, x + 0.5f * divisions, y + 0.5f * divisions, colorPixels, 2);
-	color += calculateSecondaryRays(divisions, x + 0.5f * divisions, y - 0.5f * divisions, colorPixels, 3);
+	color += calculateSecondaryRays(divisions, x - 0.5f / divisions, y + 0.5f / divisions, colorPixels, 0);
+	color += calculateSecondaryRays(divisions, x - 0.5f / divisions, y - 0.5f / divisions, colorPixels, 1);
+	color += calculateSecondaryRays(divisions, x + 0.5f / divisions, y + 0.5f / divisions, colorPixels, 2);
+	color += calculateSecondaryRays(divisions, x + 0.5f / divisions, y - 0.5f / divisions, colorPixels, 3);
 
 	color.x /= 4.0f;
 	color.y /= 4.0f;
@@ -389,8 +386,8 @@ vec3 calculatePrimaryRays(int divisions, float x, float y) {
 		}
 	}
 
-	for each (vec3 colorPixel in colorPixels) {
-		color += colorPixel;
+	for (int i = 0; i < 4; i++){
+		color += colorPixels[i][0];
 	}
 
 	color.x /= 4.0f;
@@ -404,10 +401,7 @@ vec3 calculatePrimaryRays(int divisions, float x, float y) {
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.5f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
-
-	for (int i = 0; i < 4; i++) {
-		colorPixels[i][1] = scene.ray_trace(ray);
-	}
+	colorPixels[0][1] = colorPixels[1][1] = colorPixels[2][1] = colorPixels[3][1] = scene.ray_trace(ray);
 
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.0f);
 	ray.depth = MAX_DEPTH;
@@ -431,10 +425,10 @@ vec3 calculatePrimaryRays(int divisions, float x, float y) {
 
 	divisions++;
 
-	color += calculateSecondaryRays(divisions, x - 0.5f * divisions, y + 0.5f * divisions, colorPixels, 0);
-	color += calculateSecondaryRays(divisions, x - 0.5f * divisions, y - 0.5f * divisions, colorPixels, 1);
-	color += calculateSecondaryRays(divisions, x + 0.5f * divisions, y + 0.5f * divisions, colorPixels, 2);
-	color += calculateSecondaryRays(divisions, x + 0.5f * divisions, y - 0.5f * divisions, colorPixels, 3);
+	color += calculateSecondaryRays(divisions, x - 0.5f / divisions, y + 0.5f / divisions, colorPixels, 0);
+	color += calculateSecondaryRays(divisions, x - 0.5f / divisions, y - 0.5f / divisions, colorPixels, 1);
+	color += calculateSecondaryRays(divisions, x + 0.5f / divisions, y + 0.5f / divisions, colorPixels, 2);
+	color += calculateSecondaryRays(divisions, x + 0.5f / divisions, y - 0.5f / divisions, colorPixels, 3);
 
 	color.x /= 4.0f;
 	color.y /= 4.0f;
