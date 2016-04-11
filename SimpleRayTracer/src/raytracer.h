@@ -11,7 +11,7 @@ mount_low.nff",			//3		0.5
 mount_high.nff",		//4		81.8	20
 mount_very_high.nff"	//5		?		400
 */
-#define SCENE_FILE 5
+#define SCENE_FILE 0
 //#define MAX_DEPTH 6
 #define MAX_DEPTH 6
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame, 3 - full threaded */
@@ -168,6 +168,7 @@ public:
 
 	int load_nff(std::string path);
 	Ray calculate_primary_ray(int x, int y);
+	Ray calculate_primary_ray_monte_carlo(float x, float y, float deltaX, float deltaY);
 
 	vec3 calc_reflect_color(Ray ray, Hit& hit);
 	vec3 calc_local_color(Ray& ray, Hit& hit);

@@ -89,7 +89,7 @@ void checkOpenGLError(std::string error)
 /////////////////////////////////////////////////////////////////////// SHADERs
 const GLchar* VertexShader =
 {
-	"#version 140\n"
+	"#version 330\n"
 
 	"in vec2 in_Position;\n"
 	"in vec3 in_Color;\n"
@@ -107,7 +107,7 @@ const GLchar* VertexShader =
 
 const GLchar* FragmentShader =
 {
-	"#version 140\n"
+	"#version 330\n"
 
 	"in vec4 color;\n"
 	"out vec4 out_Color;\n"
@@ -290,19 +290,169 @@ void threadedRenderScene()
 	drawPoints();
 }
 
-void renderScene()
-{
-	if (alreadyRendered)
-	{
-		return;
+vec3 calculateSecondaryRays(int divisions, float x, float y, vec3 colorPixelsPrevious[4][4], int index) {
+	Ray ray;
+	vec3 color;
+	float thresholdCompare = 0.9f;
+	bool dividePixel = false;
+	vec3 colorPixels[4][4];
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = i + 1; j < 4; j++) {
+			if ((fabsf(colorPixelsPrevious[index][i].x - colorPixelsPrevious[index][j].x) + fabsf(colorPixelsPrevious[index][i].y - colorPixelsPrevious[index][j].y) + fabsf(colorPixelsPrevious[index][i].z - colorPixelsPrevious[index][j].z)) > thresholdCompare) {
+				dividePixel = true;
+				break;
+			}
+		}
 	}
-	else
-	{
+
+	for each (vec3 colorPixel in colorPixelsPrevious) {
+		color += colorPixel;
+	}
+
+	color.x /= 4.0f;
+	color.y /= 4.0f;
+	color.z /= 4.0f;
+
+	if (!dividePixel || divisions == MAX_DEPTH) {
+		return color;
+	}
+
+	for (int i = 0; i < 4; i++){
+		colorPixels[i][0] = colorPixelsPrevious[index][i];
+	}
+
+	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.5f);
+	ray.depth = MAX_DEPTH;
+	ray.ior = 1.0f;
+
+	for (int i = 0; i < 4; i++) {
+		colorPixels[i][1] = scene.ray_trace(ray);
+	}
+
+	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.0f);
+	ray.depth = MAX_DEPTH;
+	ray.ior = 1.0f;
+	colorPixels[0][2] = colorPixels[2][2] = scene.ray_trace(ray);
+
+	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 1.0f);
+	ray.depth = MAX_DEPTH;
+	ray.ior = 1.0f;
+	colorPixels[1][2] = colorPixels[3][2] = scene.ray_trace(ray);
+
+	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.0f, 0.5f);
+	ray.depth = MAX_DEPTH;
+	ray.ior = 1.0f;
+	colorPixels[0][3] = colorPixels[1][3] = scene.ray_trace(ray);
+
+	ray = scene.calculate_primary_ray_monte_carlo(x, y, 1.0f, 0.5f);
+	ray.depth = MAX_DEPTH;
+	ray.ior = 1.0f;
+	colorPixels[2][3] = colorPixels[3][3] = scene.ray_trace(ray);
+
+	divisions++;
+
+	color += calculateSecondaryRays(divisions, x - 0.5f * divisions, y + 0.5f * divisions, colorPixels, 0);
+	color += calculateSecondaryRays(divisions, x - 0.5f * divisions, y - 0.5f * divisions, colorPixels, 1);
+	color += calculateSecondaryRays(divisions, x + 0.5f * divisions, y + 0.5f * divisions, colorPixels, 2);
+	color += calculateSecondaryRays(divisions, x + 0.5f * divisions, y - 0.5f * divisions, colorPixels, 3);
+
+	color.x /= 4.0f;
+	color.y /= 4.0f;
+	color.z /= 4.0f;
+
+	return color;
+}
+
+vec3 calculatePrimaryRays(int divisions, float x, float y) {
+	Ray ray;
+	vec3 color;
+	float thresholdCompare = 0.9f;
+	vec3 colorPixels[4][4];
+	bool dividePixel = false;
+
+	for (int pX = 0; pX < 2; pX++) {
+		for (int pY = 0; pY < 2; pY++) {
+			ray = scene.calculate_primary_ray_monte_carlo(x, y, 1.0f * (float)pX, 1.0f * (float)pY);
+			ray.depth = MAX_DEPTH;
+			ray.ior = 1.0f;
+			colorPixels[pX * 2 + pY][0] = scene.ray_trace(ray);
+		}
+	}
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = i + 1; j < 4; j++) {
+			if ((fabsf(colorPixels[i][0].x - colorPixels[j][0].x) + fabsf(colorPixels[i][0].y - colorPixels[j][0].y) + fabsf(colorPixels[i][0].z - colorPixels[j][0].z)) > thresholdCompare) {
+				dividePixel = true;
+				break;
+			}
+		}
+	}
+
+	for each (vec3 colorPixel in colorPixels) {
+		color += colorPixel;
+	}
+
+	color.x /= 4.0f;
+	color.y /= 4.0f;
+	color.z /= 4.0f;
+
+	if (!dividePixel || divisions == MAX_DEPTH) {
+		return color;
+	}
+
+	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.5f);
+	ray.depth = MAX_DEPTH;
+	ray.ior = 1.0f;
+
+	for (int i = 0; i < 4; i++) {
+		colorPixels[i][1] = scene.ray_trace(ray);
+	}
+
+	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.0f);
+	ray.depth = MAX_DEPTH;
+	ray.ior = 1.0f;
+	colorPixels[0][2] = colorPixels[2][2] = scene.ray_trace(ray);
+
+	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 1.0f);
+	ray.depth = MAX_DEPTH;
+	ray.ior = 1.0f;
+	colorPixels[1][2] = colorPixels[3][2] = scene.ray_trace(ray);
+
+	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.0f, 0.5f);
+	ray.depth = MAX_DEPTH;
+	ray.ior = 1.0f;
+	colorPixels[0][3] = colorPixels[1][3] = scene.ray_trace(ray);
+
+	ray = scene.calculate_primary_ray_monte_carlo(x, y, 1.0f, 0.5f);
+	ray.depth = MAX_DEPTH;
+	ray.ior = 1.0f;
+	colorPixels[2][3] = colorPixels[3][3] = scene.ray_trace(ray);
+
+	divisions++;
+
+	color += calculateSecondaryRays(divisions, x - 0.5f * divisions, y + 0.5f * divisions, colorPixels, 0);
+	color += calculateSecondaryRays(divisions, x - 0.5f * divisions, y - 0.5f * divisions, colorPixels, 1);
+	color += calculateSecondaryRays(divisions, x + 0.5f * divisions, y + 0.5f * divisions, colorPixels, 2);
+	color += calculateSecondaryRays(divisions, x + 0.5f * divisions, y - 0.5f * divisions, colorPixels, 3);
+
+	color.x /= 4.0f;
+	color.y /= 4.0f;
+	color.z /= 4.0f;
+
+	return color;
+}
+
+void renderScene(){
+	if (alreadyRendered){
+		return;
+	}else{
 		alreadyRendered = true;
 	}
+
 	double start = omp_get_wtime();
-	if (DRAW_MODE == 3)
-	{
+	
+	if (DRAW_MODE == 3){
 		threadedRenderScene();
 		printf("Terminou! em %f\n", omp_get_wtime() - start);
 		return;
@@ -313,23 +463,18 @@ void renderScene()
 	vec3 color;
 	Ray ray;
 	int y, x;
+	int divisionsX = 4, divisionsY = 4, divisionsMax = 4;
+	float thresholdSampling = 0.9f;
 
-	for (y = 0; y < RES_Y; y++)
-	{
-		for (x = 0; x < RES_X; x++)
-		{
-			ray = scene.calculate_primary_ray(x, y);
-			ray.depth = MAX_DEPTH;
-			ray.ior = 1.0f;
-			//if (x == 259 && y == 512-126) {printf("oi\n");}else{continue;}
-			color = scene.ray_trace(ray);
+	for (y = 0; y < RES_Y; y++){
+		for (x = 0; x < RES_X; x++){
+			color = calculatePrimaryRays(0, (float)x, (float)y);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
 			colors[index_col++] = (float)color.x;
 			colors[index_col++] = (float)color.y;
 			colors[index_col++] = (float)color.z;
-
 
 			if (DRAW_MODE == 0)
 			{ // desenhar o conteúdo da janela ponto a ponto
@@ -456,42 +601,44 @@ int main(int argc, char* argv[])
 	RES_X = scene.camera.res_x;
 	RES_Y = scene.camera.res_y;
 
-	if (DRAW_MODE == 0)
-	{ // desenhar o conteúdo da janela ponto a ponto
+	if (DRAW_MODE == 0){ // desenhar o conteúdo da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);
 		size_colors = 3 * sizeof(float);
 		printf("DRAWING MODE: POINT BY POINT\n");
 	}
-	else if (DRAW_MODE == 1)
-	{ // desenhar o conteúdo da janela linha a linha
+	else if (DRAW_MODE == 1){ // desenhar o conteúdo da janela linha a linha
 		size_vertices = 2 * RES_X * sizeof(float);
 		size_colors = 3 * RES_X * sizeof(float);
 		printf("DRAWING MODE: LINE BY LINE\n");
 	}
-	else if (DRAW_MODE == 2)
-	{ // preencher o conteúdo da janela com uma imagem completa
+	else if (DRAW_MODE == 2){ // preencher o conteúdo da janela com uma imagem completa
 		size_vertices = 2 * RES_X * RES_Y * sizeof(float);
 		size_colors = 3 * RES_X * RES_Y * sizeof(float);
 		printf("DRAWING MODE: FULL IMAGE\n");
 	}
-	else if (DRAW_MODE == 3) // use omp to draw image at once
-	{
+	else if (DRAW_MODE == 3){ // use omp to draw image at once
 		size_vertices = 2 * RES_X * RES_Y * sizeof(float);
 		size_colors = 3 * RES_X * RES_Y * sizeof(float);
 		printf("DRAWING MODE: FULL IMAGE WITH THREADS\n");
 	}
-	else
-	{
+	else{
 		printf("Draw mode not valid \n");
 		exit(0);
 	}
+
 	printf("resx = %d  resy= %d.\n", RES_X, RES_Y);
 
 	vertices = (float*)malloc(size_vertices);
-	if (vertices == NULL) exit(1);
+
+	if (vertices == NULL) {
+		exit(1);
+	}
 
 	colors = (float*)malloc(size_colors);
-	if (colors == NULL) exit(1);
+
+	if (colors == NULL) {
+		exit(1);
+	}
 
 	init(argc, argv);
 	glutMainLoop();

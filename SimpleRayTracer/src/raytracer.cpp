@@ -68,6 +68,33 @@ Ray Scene::calculate_primary_ray(int x, int y)
 }
 
 
+Ray Scene::calculate_primary_ray_monte_carlo(float x, float y, float deltaX, float deltaY){
+	Ray r;
+	double df; //distance to frame
+	double h; // frame height
+	double w; // frame width
+	vec3 xe, ye, ze; // camera space
+	ze = camera.from - camera.at;
+	df = ze.length;
+	ze = normalize(ze);
+	double angle; // half of the field of view
+	angle = (M_PI / 180.0) * (camera.angle / 2.0);
+	h = 2 * df * tan(angle);
+	w = (camera.res_x * h) / camera.res_y; // height * ratio
+	xe = normalize(cross(camera.up, ze));
+	ye = normalize(cross(ze, xe));
+	r.origin = camera.from;
+
+	r.dir = (w * (((float)x + deltaX) / camera.res_x - 0.5)) * xe +
+		(h * (((float)y + deltaY) / camera.res_y - 0.5)) * ye +
+		(-df) * ze;
+
+	r.dir = normalize(r.dir);
+
+	return r;
+}
+
+
 vec3 Scene::calc_refract_color(Ray ray, Hit& hit)
 {
 	if(hit.mat.T <= 0.0)
