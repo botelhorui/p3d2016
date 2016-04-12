@@ -293,12 +293,14 @@ void threadedRenderScene()
 vec3 calculateSecondaryRays(int divisions, float x, float y, vec3 colorPixelsPrevious[4][4], int index) {
 	Ray ray;
 	vec3 color;
-	float thresholdCompare = 0.9f;
+	float thresholdCompare = MONTE_CARLO_THRESHOLD;
 	bool dividePixel = false;
 	vec3 colorPixels[4][4];
 
+	// Compares each calculated ray in order to check if division is needed
 	for (int i = 0; i < 3; i++) {
 		for (int j = i + 1; j < 4; j++) {
+			// If the difference between the sum of the RGB components of any two rays is greater than threshold, division of the pixel is needed
 			if ((fabsf(colorPixelsPrevious[index][i].x - colorPixelsPrevious[index][j].x) + fabsf(colorPixelsPrevious[index][i].y - colorPixelsPrevious[index][j].y) + fabsf(colorPixelsPrevious[index][i].z - colorPixelsPrevious[index][j].z)) > thresholdCompare) {
 				dividePixel = true;
 				break;
@@ -306,15 +308,17 @@ vec3 calculateSecondaryRays(int divisions, float x, float y, vec3 colorPixelsPre
 		}
 	}
 
-	for (int i = 0; i < 4; i++){
-		color += colorPixelsPrevious[index][i];
-	}
+	if (!dividePixel || divisions == MAX_DIVISIONS) {
+		{ // Calculate the average color of the pixel, based on the colors of each ray
+			for (int i = 0; i < 4; i++) {
+				color += colorPixelsPrevious[index][i];
+			}
 
-	color.x /= 4.0f;
-	color.y /= 4.0f;
-	color.z /= 4.0f;
+			color.x /= 4.0f;
+			color.y /= 4.0f;
+			color.z /= 4.0f;
+		}
 
-	if (!dividePixel || divisions == MAX_DEPTH) {
 		return color;
 	}
 
@@ -322,30 +326,42 @@ vec3 calculateSecondaryRays(int divisions, float x, float y, vec3 colorPixelsPre
 		colorPixels[i][0] = colorPixelsPrevious[index][i];
 	}
 
+	// Sub-pixels
+	// 2 3
+	// 0 1
+	// Rays in pixel
+	// 7 8 9
+	// 4 5 6
+	// 1 2 3
+	// Calculates the central ray (5) for the current pixel, which is shared with every sub-pixel
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.5f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
 	colorPixels[0][1] = colorPixels[1][1] = colorPixels[2][1] = colorPixels[3][1] = scene.ray_trace(ray);
 
+	// Calculates the bottom center pixel (2), which is shared between the bottom left and the bottom-right sub-pixels
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.0f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
-	colorPixels[0][2] = colorPixels[2][2] = scene.ray_trace(ray);
+	colorPixels[0][2] = colorPixels[1][2] = scene.ray_trace(ray);
 
+	// Calculates the top center pixel (8), which is shared between the top left and the top right sub-pixels
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 1.0f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
-	colorPixels[1][2] = colorPixels[3][2] = scene.ray_trace(ray);
+	colorPixels[2][2] = colorPixels[3][2] = scene.ray_trace(ray);
 
+	// Calculates the left center pixel (4), which is shared between the bottom left and the top left sub-pixels
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.0f, 0.5f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
-	colorPixels[0][3] = colorPixels[1][3] = scene.ray_trace(ray);
+	colorPixels[0][3] = colorPixels[2][3] = scene.ray_trace(ray);
 
+	// Calculates the right center pixel (6), which is shared between the bottom right and the top right sub-pixels
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 1.0f, 0.5f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
-	colorPixels[2][3] = colorPixels[3][3] = scene.ray_trace(ray);
+	colorPixels[1][3] = colorPixels[3][3] = scene.ray_trace(ray);
 
 	divisions++;
 
@@ -364,21 +380,31 @@ vec3 calculateSecondaryRays(int divisions, float x, float y, vec3 colorPixelsPre
 vec3 calculatePrimaryRays(int divisions, float x, float y) {
 	Ray ray;
 	vec3 color;
-	float thresholdCompare = 0.9f;
-	vec3 colorPixels[4][4];
+	float thresholdCompare = MONTE_CARLO_THRESHOLD;
+	vec3 colorPixels[4][4]; // The first index is the sub-pixel, and the second index is the ray color
 	bool dividePixel = false;
 
-	for (int pX = 0; pX < 2; pX++) {
-		for (int pY = 0; pY < 2; pY++) {
-			ray = scene.calculate_primary_ray_monte_carlo(x, y, 1.0f * (float)pX, 1.0f * (float)pY);
+	// Sub-pixels
+	// 2 3
+	// 0 1
+	// Rays in pixel
+	// 7 8 9
+	// 4 5 6
+	// 1 2 3
+	// Calculate the 4 primary rays (1, 3, 7, 9) for the main pixel (each ray for each corner)
+	for (int pY = 0; pY < 2; pY++) {
+		for (int pX = 0; pX < 2; pX++) {
+			ray = scene.calculate_primary_ray_monte_carlo(x, y, (float)pX, (float)pY);
 			ray.depth = MAX_DEPTH;
 			ray.ior = 1.0f;
-			colorPixels[pX * 2 + pY][0] = scene.ray_trace(ray);
+			colorPixels[pY * 2 + pX][0] = scene.ray_trace(ray);
 		}
 	}
 
+	// Compares each calculated ray in order to check if division is needed
 	for (int i = 0; i < 3; i++) {
 		for (int j = i + 1; j < 4; j++) {
+			// If the difference between the sum of the RGB components of any two rays is greater than threshold, division of the pixel is needed
 			if ((fabsf(colorPixels[i][0].x - colorPixels[j][0].x) + fabsf(colorPixels[i][0].y - colorPixels[j][0].y) + fabsf(colorPixels[i][0].z - colorPixels[j][0].z)) > thresholdCompare) {
 				dividePixel = true;
 				break;
@@ -386,42 +412,57 @@ vec3 calculatePrimaryRays(int divisions, float x, float y) {
 		}
 	}
 
-	for (int i = 0; i < 4; i++){
-		color += colorPixels[i][0];
-	}
+	// The final color is calculated
+	if (!dividePixel || divisions == MAX_DIVISIONS) {
+		{ // Calculate the average color of the pixel, based on the colors of each ray
+			for (int i = 0; i < 4; i++) {
+				color += colorPixels[i][0];
+			}
 
-	color.x /= 4.0f;
-	color.y /= 4.0f;
-	color.z /= 4.0f;
+			color.x /= 4.0f;
+			color.y /= 4.0f;
+			color.z /= 4.0f;
+		}
 
-	if (!dividePixel || divisions == MAX_DEPTH) {
 		return color;
 	}
 
+	// Sub-pixels
+	// 2 3
+	// 0 1
+	// Rays in pixel
+	// 7 8 9
+	// 4 5 6
+	// 1 2 3
+	// Calculates the central ray (5) for the current pixel, which is shared with every sub-pixel
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.5f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
 	colorPixels[0][1] = colorPixels[1][1] = colorPixels[2][1] = colorPixels[3][1] = scene.ray_trace(ray);
 
+	// Calculates the bottom center pixel (2), which is shared between the bottom left and the bottom-right sub-pixels
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 0.0f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
-	colorPixels[0][2] = colorPixels[2][2] = scene.ray_trace(ray);
+	colorPixels[0][2] = colorPixels[1][2] = scene.ray_trace(ray);
 
+	// Calculates the top center pixel (8), which is shared between the top left and the top right sub-pixels
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.5f, 1.0f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
-	colorPixels[1][2] = colorPixels[3][2] = scene.ray_trace(ray);
+	colorPixels[2][2] = colorPixels[3][2] = scene.ray_trace(ray);
 
+	// Calculates the left center pixel (4), which is shared between the bottom left and the top left sub-pixels
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 0.0f, 0.5f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
-	colorPixels[0][3] = colorPixels[1][3] = scene.ray_trace(ray);
+	colorPixels[0][3] = colorPixels[2][3] = scene.ray_trace(ray);
 
+	// Calculates the right center pixel (6), which is shared between the bottom right and the top right sub-pixels
 	ray = scene.calculate_primary_ray_monte_carlo(x, y, 1.0f, 0.5f);
 	ray.depth = MAX_DEPTH;
 	ray.ior = 1.0f;
-	colorPixels[2][3] = colorPixels[3][3] = scene.ray_trace(ray);
+	colorPixels[1][3] = colorPixels[3][3] = scene.ray_trace(ray);
 
 	divisions++;
 
@@ -456,12 +497,11 @@ void renderScene(){
 	int index_col = 0;
 	vec3 color;
 	Ray ray;
-	int y, x;
 	int divisionsX = 4, divisionsY = 4, divisionsMax = 4;
 	float thresholdSampling = 0.9f;
 
-	for (y = 0; y < RES_Y; y++){
-		for (x = 0; x < RES_X; x++){
+	for (int y = 0; y < RES_Y; y++){
+		for (int x = 0; x < RES_X; x++){
 			color = calculatePrimaryRays(0, (float)x, (float)y);
 
 			vertices[index_pos++] = (float)x;

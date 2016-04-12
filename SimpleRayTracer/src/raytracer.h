@@ -11,9 +11,11 @@ mount_low.nff",			//3		0.5
 mount_high.nff",		//4		81.8	20
 mount_very_high.nff"	//5		?		400
 */
-#define SCENE_FILE 0
+#define SCENE_FILE 2
 //#define MAX_DEPTH 6
 #define MAX_DEPTH 6
+#define MAX_DIVISIONS 2
+#define MONTE_CARLO_THRESHOLD 0.3
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame, 3 - full threaded */
 #define DRAW_MODE 2
 
