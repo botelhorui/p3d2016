@@ -8,7 +8,10 @@ layout (location = 4) in vec3 bitangent;
 out VS_OUT {
     vec3 FragPos;
     vec2 TexCoords;
+<<<<<<< HEAD
     vec3 Normal;
+=======
+>>>>>>> origin/rui
     vec3 TangentLightPos;
     vec3 TangentViewPos;
     vec3 TangentFragPos;
@@ -28,7 +31,10 @@ void main()
     vs_out.TexCoords = texCoords;
     
     mat3 normalMatrix = transpose(inverse(mat3(model)));
+<<<<<<< HEAD
     vs_out.Normal = normalMatrix * normal;
+=======
+>>>>>>> origin/rui
     vec3 T = normalize(normalMatrix * tangent);
     vec3 B = normalize(normalMatrix * bitangent);
     vec3 N = normalize(normalMatrix * normal);    

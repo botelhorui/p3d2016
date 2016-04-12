@@ -52,6 +52,7 @@ GLfloat lastFrame = 0.0f;  	// Time of last frame
 glm::vec3 lightPos(1.2f, 3.0f, -0.0f);
 
 bool bumpMapActive = false;
+<<<<<<< HEAD
 bool mappingMode = true;
 
 std::vector<Model> models;
@@ -61,6 +62,11 @@ int currentSkyboxIndex = 0;
 
 std::vector<Shader> shaders;
 int currentShaderIndex = 0;
+=======
+
+std::vector<Model> models;
+int currentModelIndex = 0;
+>>>>>>> origin/rui
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
@@ -97,6 +103,14 @@ int main()
 
 	
 	// Build and compile our shader program
+<<<<<<< HEAD
+=======
+	// TODO file existance is not verified
+	Shader simpleShader("shaders/simple.vs", "shaders/simple.frag");	
+	Shader normalShader("shaders/bump.vs", "shaders/bump.frag");
+	Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
+
+>>>>>>> origin/rui
 
 	// texture and phong
 	Shader simpleShader("shaders/simple.vs", "shaders/simple.frag");	
@@ -127,6 +141,7 @@ int main()
 	Shader lampShader("shaders/lamp.vs", "shaders/lamp.frag");
 	Shader skyboxShader("shaders/skybox.vs", "shaders/skybox.frag");
 	
+<<<<<<< HEAD
 	Model cubeModel("resources/models/cube/cube.obj");
 	Model lampModel("resources/models/lamp/lamp.obj");	
 	Model sphereModel("resources/models/sphere/sphere.obj");	
@@ -143,6 +158,24 @@ int main()
 	models.push_back(torusModel);
 	models.push_back(sphereModel);
 	models.push_back(sphere2Model);
+=======
+	//Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
+	//Model lampModel("resources/models/cube/cube.obj");
+	Model cubeModel("resources/models/cube/cube.obj");
+	Model lampModel("resources/models/lamp/lamp.obj");
+	models.push_back(cubeModel);
+	Model sphereModel("resources/models/sphere/sphere.obj");
+	models.push_back(sphereModel);
+	Model torusModel("resources/models/torus/torus.obj");
+	models.push_back(torusModel);
+	Model nanosuitModel("resources/models/nanosuit/nanosuit.obj");
+	glm::mat4 model;
+	//model = glm::rotate(model, 45.0f, glm::vec3(0, 1, 0));
+	model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+	model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
+	nanosuitModel.setModelMatrix(model);
+	models.push_back(nanosuitModel);
+>>>>>>> origin/rui
 	// TODO import other formats
 
 	// Draw in wireframe
@@ -151,6 +184,7 @@ int main()
 	// Point light positions	
 	glm::vec3 pointLight(-1.7f, 1.2f, 1.0f);
 
+<<<<<<< HEAD
 	// load skybox
 	// Setup skybox VAO
 	GLuint skyboxVAO, skyboxVBO;
@@ -196,6 +230,11 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+=======
+	//
+	glEnable(GL_DEPTH_TEST);
+
+>>>>>>> origin/rui
 	// Game loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -218,12 +257,21 @@ int main()
 		glm::mat4 view = camera.GetViewMatrix();		
 		// set projection matrix
 		glm::mat4 projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
+<<<<<<< HEAD
 
 
 		Shader shader = shaders[currentShaderIndex];
+=======
+		// set model matrix		
+>>>>>>> origin/rui
 
+		Shader shader = simpleShader;
+		if (bumpMapActive) {
+			shader = normalShader;
+		}
 		// Activate shader
 		shader.Use();
+<<<<<<< HEAD
 
 		// Set skybox
 		
@@ -235,6 +283,8 @@ int main()
 		glUniform1i(glGetUniformLocation(shader.Program, "sphereMap"), 3);
 		glBindTexture(GL_TEXTURE_2D, sphereTexture);
 		
+=======
+>>>>>>> origin/rui
 		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 		
@@ -253,6 +303,7 @@ int main()
 		glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 		lampModel.Draw(lampShader);
+<<<<<<< HEAD
 		
 		// draw skybox
 		
@@ -268,6 +319,8 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS); // Set depth function back to default	
+=======
+>>>>>>> origin/rui
 		
 		// Swap the screen buffers
 		glfwSwapBuffers(window);
@@ -285,6 +338,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
+<<<<<<< HEAD
 	}	else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
 		currentModelIndex = (currentModelIndex + 1) % models.size();
 	} else if (key == GLFW_KEY_C && action == GLFW_PRESS) {
@@ -308,6 +362,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		models[currentModelIndex].setModelMatrix(m);
 	}
 
+=======
+	}else if (key == GLFW_KEY_N && action == GLFW_PRESS) {
+		bumpMapActive = !bumpMapActive;
+	}
+	else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
+		currentModelIndex = (currentModelIndex + 1) % models.size();
+	}
+>>>>>>> origin/rui
 	if (key >= 0 && key < 1024)
 	{
 		if (action == GLFW_PRESS)

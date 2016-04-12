@@ -26,9 +26,9 @@ int Scene::load_nff(std::string path)
 		}
 		else if (type == "l")
 		{
-			vec3 pos, color;
-			f >> pos >> color;
-			lights.push_back(Light(pos, color));
+			vec3 pos, a,b,color;
+			f >> pos >> a >> b >> color;
+			lights.push_back(Light(pos, a, b, color));
 		}
 		else if (type == "f")
 		{

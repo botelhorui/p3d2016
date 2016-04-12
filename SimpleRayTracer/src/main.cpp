@@ -29,7 +29,8 @@ const char* scene_files[] = {
 	"scenes/balls_high.nff", //2
 	"scenes/mount_low.nff", //3
 	"scenes/mount_high.nff", //4
-	"scenes/mount_very_high.nff" //5
+	"scenes/mount_very_high.nff", //5
+	"scenes/balls_low_large.nff",	//6
 };
 const char* scene_file = scene_files[SCENE_FILE];
 
@@ -90,7 +91,6 @@ void checkOpenGLError(std::string error)
 const GLchar* VertexShader =
 {
 	"#version 330\n"
-
 	"in vec2 in_Position;\n"
 	"in vec3 in_Color;\n"
 	"uniform mat4 Matrix;\n"
@@ -497,8 +497,9 @@ void renderScene(){
 	int index_col = 0;
 	vec3 color;
 	Ray ray;
+
 	int divisionsX = 4, divisionsY = 4, divisionsMax = 4;
-	float thresholdSampling = 0.9f;
+	float thresholdSampling = 0.3f;
 
 	for (int y = 0; y < RES_Y; y++){
 		for (int x = 0; x < RES_X; x++){
@@ -639,23 +640,19 @@ int main(int argc, char* argv[])
 		size_vertices = 2 * sizeof(float);
 		size_colors = 3 * sizeof(float);
 		printf("DRAWING MODE: POINT BY POINT\n");
-	}
-	else if (DRAW_MODE == 1){ // desenhar o conteúdo da janela linha a linha
+	}else if (DRAW_MODE == 1){ // desenhar o conteúdo da janela linha a linha
 		size_vertices = 2 * RES_X * sizeof(float);
 		size_colors = 3 * RES_X * sizeof(float);
 		printf("DRAWING MODE: LINE BY LINE\n");
-	}
-	else if (DRAW_MODE == 2){ // preencher o conteúdo da janela com uma imagem completa
+	}else if (DRAW_MODE == 2){ // preencher o conteúdo da janela com uma imagem completa
 		size_vertices = 2 * RES_X * RES_Y * sizeof(float);
 		size_colors = 3 * RES_X * RES_Y * sizeof(float);
 		printf("DRAWING MODE: FULL IMAGE\n");
-	}
-	else if (DRAW_MODE == 3){ // use omp to draw image at once
+	}else if (DRAW_MODE == 3){ // use omp to draw image at once
 		size_vertices = 2 * RES_X * RES_Y * sizeof(float);
 		size_colors = 3 * RES_X * RES_Y * sizeof(float);
 		printf("DRAWING MODE: FULL IMAGE WITH THREADS\n");
-	}
-	else{
+	}else{
 		printf("Draw mode not valid \n");
 		exit(0);
 	}

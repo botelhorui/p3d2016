@@ -67,7 +67,6 @@ Ray Scene::calculate_primary_ray(int x, int y)
 	return r;
 }
 
-
 Ray Scene::calculate_primary_ray_monte_carlo(float x, float y, float deltaX, float deltaY){
 	Ray r;
 	double df; //distance to frame
@@ -93,7 +92,6 @@ Ray Scene::calculate_primary_ray_monte_carlo(float x, float y, float deltaX, flo
 
 	return r;
 }
-
 
 vec3 Scene::calc_refract_color(Ray ray, Hit& hit)
 {
@@ -151,39 +149,58 @@ void Scene::calc_shadow_intersections(Ray& ray, Hit& hit)
 	}
 }
 
+void Scene::calc_shadow_ray(Hit& hit, Light& light, Ray& ray_out)
+{
+	double deltaX = ((double)rand()/(double)RAND_MAX)*0.25;
+	double deltaY = ((double)rand()/ (double)RAND_MAX)*0.25;
+	ray_out.origin = hit.pos;
+	vec3 light_delta = light.pos + light.a*deltaX + light.b*deltaY;
+	ray_out.dir = normalize(light_delta - hit.pos);
+}
+
 vec3 Scene::calc_local_color(Ray& ray, Hit& hit)
 {
 	vec3 localColor(0, 0, 0);
+	const double NUM_SAMPLES = 1 << 8;
 	for (auto& light: lights)
 	{
-		Hit shadow_hit;
-		vec3 light_vec = light.pos - hit.pos;
-		vec3 light_dir = normalize(light_vec);
-		Ray shadow_ray(hit.pos, light_dir, 0, 0.0);
-		shadow_ray.offset(EPSILON);
-		calc_shadow_intersections(shadow_ray, shadow_hit);
-		if (shadow_hit.dist > 0 && shadow_hit.dist < light_vec.length)
+		vec3 c(0, 0, 0);
+		for (int si = 0; si < NUM_SAMPLES; si++)
 		{
-			continue;
-		}
-		vec3 diffuseColor, specularcolor;
-		double lambertian = dot(light_dir, hit.normal);
-		if (lambertian > 0.0f)
-		{
-			diffuseColor = hit.mat.color * hit.mat.Kd * lambertian;
-			//specular
-			vec3 viewDir = normalize(ray.origin - hit.pos);
-			vec3 halfDir = normalize(light_dir + viewDir);
-			double specAngle = dot(halfDir, hit.normal);
-			double specular = pow(specAngle, hit.mat.Shine * 1.f);
-			if (specular > 0.0f)
+			Hit shadow_hit;
+			vec3 light_vec = light.pos - hit.pos;
+			vec3 light_dir = normalize(light_vec);
+			//Ray shadow_ray(hit.pos, light_dir, 0, 0.0);
+			Ray shadow_ray;
+			calc_shadow_ray(hit, light, shadow_ray);
+			shadow_ray.offset(EPSILON);
+			calc_shadow_intersections(shadow_ray, shadow_hit);
+			if (shadow_hit.dist > 0 && shadow_hit.dist < light_vec.length)
 			{
-				//specularcolor = hit.mat.color * hit.mat.Ks * specular * 0.6f;
-				specularcolor = vec3(1.f) * hit.mat.Ks * specular * 0.3f;
+				continue;
 			}
+			vec3 diffuseColor, specularcolor;
+			double lambertian = dot(light_dir, hit.normal);
+			if (lambertian > 0.0f)
+			{
+				diffuseColor = hit.mat.color * hit.mat.Kd * lambertian;
+				//specular
+				vec3 viewDir = normalize(ray.origin - hit.pos);
+				vec3 halfDir = normalize(light_dir + viewDir);
+				double specAngle = dot(halfDir, hit.normal);
+				double specular = pow(specAngle, hit.mat.Shine * 4.f);
+				if (specular > 0.0f)
+				{
+					//specularcolor = hit.mat.color * hit.mat.Ks * specular * 0.6f;
+					specularcolor = hit.mat.color * hit.mat.Ks * specular;;
+				}
+			}
+			c += diffuseColor + specularcolor;
 		}
-		localColor +=  diffuseColor + specularcolor;
+
+		localColor += (1.0/NUM_SAMPLES)*c;
 	}
+	
 	return localColor;
 }
 
@@ -222,7 +239,8 @@ vec3 Scene::ray_trace(Ray ray)
 	double transmitance = 1.0 - reflectance;
 	vec3 reflect_color = calc_reflect_color(ray, hit);
 	vec3 refract_color = calc_refract_color(ray, hit);
-	return local_color + (1.0 - hit.mat.T) * reflect_color + hit.mat.T * refract_color;
+
+	return local_color + (1.0 - hit.mat.T)* 0.7f * reflect_color + hit.mat.T * refract_color;
 	//return local_color + reflectance * reflect_color + transmitance * refract_color;
 
 }

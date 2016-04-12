@@ -11,10 +11,10 @@ mount_low.nff",			//3		0.5
 mount_high.nff",		//4		81.8	20
 mount_very_high.nff"	//5		?		400
 */
-#define SCENE_FILE 2
+#define SCENE_FILE 0
 //#define MAX_DEPTH 6
 #define MAX_DEPTH 6
-#define MAX_DIVISIONS 2
+#define MAX_DIVISIONS 3
 #define MONTE_CARLO_THRESHOLD 0.3
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame, 3 - full threaded */
 #define DRAW_MODE 2
@@ -86,9 +86,9 @@ class Light
 {
 public:
 	vec3 pos;
+	vec3 a, b;
 	vec3 color;
-
-	Light(vec3 pos, vec3 color) : pos(pos), color(color)
+	Light(vec3 pos, vec3 color, vec3 a,vec3 b) : pos(pos), color(color), a(a), b(b)
 	{
 	}
 };
@@ -178,5 +178,7 @@ public:
 	vec3 calc_refract_color(Ray ray, Hit& hit);
 	void calc_intersection(Ray& ray, Hit& hit);
 	vec3 ray_trace(Ray ray);
+
+	void Scene::calc_shadow_ray(Hit& hit, Light& light_pos, Ray& ray_out);
 };
 

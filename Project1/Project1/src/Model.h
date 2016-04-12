@@ -47,10 +47,13 @@ public:
 		model = m;
 	}
 
+<<<<<<< HEAD
 	glm::mat4 getModelMatrix() {
 		return model;
 	}
 
+=======
+>>>>>>> origin/rui
 private:
 	/*  Model Data  */
 	bool isLoaded;
@@ -228,7 +231,11 @@ GLint TextureFromFile(const char* path, string directory)
 	filename = directory + '/' + filename;
 	GLuint textureID;
 	glGenTextures(1, &textureID);
+<<<<<<< HEAD
 	int width, height, channels = 0;
+=======
+	int width, height, channels;
+>>>>>>> origin/rui
 	unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, &channels, SOIL_LOAD_RGB);
 	if (image == 0) {
 		std::cout << "Error loading texture: " << filename << std::endl;
