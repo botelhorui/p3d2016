@@ -31,6 +31,7 @@ const char* scene_files[] = {
 	"scenes/mount_high.nff", //4
 	"scenes/mount_very_high.nff", //5
 	"scenes/balls_low_large.nff",	//6
+	"scenes/test1.nff",	//7
 };
 const char* scene_file = scene_files[SCENE_FILE];
 
@@ -261,6 +262,8 @@ void drawPoints(float* vertices, int size_vertices, float* colors, int size_colo
 // Render function by primary ray casting from the eye towards the scene's objects
 bool alreadyRendered = false;
 
+vec3 calculatePrimaryRays(int divisions, float x, float y);
+
 void threadedRenderScene()
 {
 #pragma omp parallel
@@ -268,15 +271,16 @@ void threadedRenderScene()
 		int x, y;
 #pragma omp master
 		printf("num threads %d\n", omp_get_num_threads());
-#pragma omp for schedule(dynamic)
+#pragma omp for schedule(dynamic,1)
 		for (y = 0; y < RES_Y; y++)
 		{
 			for (x = 0; x < RES_X; x++)
 			{
-				Ray ray = scene.calculate_primary_ray(x, y);
-				ray.depth = MAX_DEPTH;
-				ray.ior = 1.0f;
-				vec3 color = scene.ray_trace(ray);
+				vec3 color = calculatePrimaryRays(0, (float)x, (float)y);
+				//Ray ray = scene.calculate_primary_ray(x, y);
+				//ray.depth = MAX_DEPTH;
+				//ray.ior = 1.0f;
+				//vec3 color = scene.ray_trace(ray);
 				int vertice_i = std::max(0, y - 1) * RES_X * 2 + x * 2;
 				int color_i = std::max(0, y - 1) * RES_X * 3 + x * 3;
 				vertices[vertice_i] = (float)x;

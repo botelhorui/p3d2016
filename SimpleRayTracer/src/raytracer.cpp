@@ -161,11 +161,11 @@ void Scene::calc_shadow_ray(Hit& hit, Light& light, Ray& ray_out)
 vec3 Scene::calc_local_color(Ray& ray, Hit& hit)
 {
 	vec3 localColor(0, 0, 0);
-	const double NUM_SAMPLES = 1 << 8;
+	
 	for (auto& light: lights)
 	{
 		vec3 c(0, 0, 0);
-		for (int si = 0; si < NUM_SAMPLES; si++)
+		for (int si = 0; si < RUN_SHADOW_FEELERS; si++)
 		{
 			Hit shadow_hit;
 			vec3 light_vec = light.pos - hit.pos;
@@ -198,7 +198,7 @@ vec3 Scene::calc_local_color(Ray& ray, Hit& hit)
 			c += diffuseColor + specularcolor;
 		}
 
-		localColor += (1.0/NUM_SAMPLES)*c;
+		localColor += (1.0/RUN_SHADOW_FEELERS)*c;
 	}
 	
 	return localColor;

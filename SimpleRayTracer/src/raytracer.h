@@ -10,15 +10,19 @@ balls_high.nff",		//2		126
 mount_low.nff",			//3		0.5
 mount_high.nff",		//4		81.8	20
 mount_very_high.nff"	//5		?		400
+"scenes/balls_low_large.nff",	//6
+"scenes/test1.nff"		//7
+
 */
-#define SCENE_FILE 0
+#define SCENE_FILE 7
 //#define MAX_DEPTH 6
 #define MAX_DEPTH 6
 #define MAX_DIVISIONS 3
 #define MONTE_CARLO_THRESHOLD 0.3
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame, 3 - full threaded */
-#define DRAW_MODE 2
-
+#define DRAW_MODE 3
+// soft shadows
+#define RUN_SHADOW_FEELERS  (1 << 6)
 
 
 class Material
