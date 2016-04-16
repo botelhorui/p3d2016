@@ -20,6 +20,9 @@ int Scene::load_nff(std::string path)
 			f >> type >> camera.from;
 			f >> type >> camera.at;
 			f >> type >> camera.up;
+			f >> type >> camera.focalDist;
+			f >> type >> camera.viewDist;
+			f >> type >> camera.apperture;
 			f >> type >> camera.angle;
 			f >> type >> camera.hither;
 			f >> type >> camera.res_x >> camera.res_y;
