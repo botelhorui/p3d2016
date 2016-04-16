@@ -24,7 +24,7 @@ balls_low_large.nff",	//6
 	3 - full threaded
 	4 - full threaded dof */
 #define DRAW_MODE 4
-#define DEPTH_OF_FIELD_SAMPLES 4
+#define DEPTH_OF_FIELD_SAMPLES 1
 
 
 class Material

@@ -143,8 +143,9 @@ vec3 Scene::ray_trace_dof(int x, int y)
 	vec3 xe, ye, ze; // camera space
 	double angle; // half of the field of view
 	ze = camera.from - camera.at;
-	df = ze.length;
-	ze = normalize(ze);	
+	ze = normalize(ze);
+	//df = ze.length;
+	df = camera.viewDist;
 	xe = normalize(cross(camera.up, ze));
 	ye = normalize(cross(ze, xe));
 	angle = (M_PI / 180.0) * (camera.angle / 2.0);
@@ -153,20 +154,24 @@ vec3 Scene::ray_trace_dof(int x, int y)
 	// ps is the view plane point
 	double psx = (w * ((1.0 * x) / camera.res_x - .5));
 	double psy = (h * ((1.0 * y) / camera.res_y - .5));
-	double increase = camera.focalDist / camera.viewDist;
+	double increase = camera.focalDist / df;
 	double px = psx * increase;
 	double py = psy * increase;
 	double pz = -camera.focalDist;
+	vec3 p = px*xe + py*ye + pz*ze; // focal point
 	vec3 color;
-	vec3 dir = normalize(px*xe + py*ye + pz*ze);
-	Ray r(camera.from,dir, MAX_DEPTH,1.0);
+	vec3 d = normalize(px*xe + py*ye + pz*ze);
+	Ray r(camera.from, d, MAX_DEPTH, 1.0);
 	//return ray_trace(r);	
 	for (int i = 0; i < DEPTH_OF_FIELD_SAMPLES; i++)
 	{
 		double sx = ((double)rand() / (double)RAND_MAX)*camera.apperture;
 		double sy = ((double)rand() / (double)RAND_MAX)*camera.apperture;
 		vec3 origin = camera.from + sx * xe + sy * ye;
-		vec3 dir = (px - origin.x)*xe + (py - origin.y)*ye + pz * ze;
+		double dirx = px - sx;
+		double diry = py - sy;
+		double dirz = -camera.focalDist;
+		vec3 dir = dirx * xe + diry * ye + dirz * ze;
 		dir = normalize(dir);
 		Ray ray(origin, dir, MAX_DEPTH, 1.0);
 		color += ray_trace(ray);

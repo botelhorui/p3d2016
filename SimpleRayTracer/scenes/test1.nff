@@ -4,10 +4,10 @@ from 3 3 1
 at 0 0 0
 up 0 0 1
 focal 4
-view 4
-apperture 0.1
+view 1
+apperture 0.4
 angle 45
-hither 0.01
+hither 0.1
 resolution 512 512
 l -2 0 3 0 0 1 0 1 0 1 1 1
 f 1 0.75 0.33 0.8 0 100000 0 1
