@@ -84,6 +84,16 @@ inline vec3 operator*(vec3 const& v, double const& f)
 	return vec3(f * v.x, f * v.y, f * v.z);
 }
 
+inline vec3 operator/(double const& f, vec3 const& v)
+{
+	return vec3(v.x / f, v.y/f, v.z/f);
+}
+
+inline vec3 operator/(vec3 const& v, double const& f)
+{
+	return vec3(v.x / f, v.y / f, v.z / f);
+}
+
 inline vec3 operator-(vec3 const& v)
 {
 	return vec3(-v.x, -v.y, -v.z);

@@ -31,6 +31,7 @@ const char* scene_files[] = {
 	"scenes/mount_high.nff", //4
 	"scenes/mount_very_high.nff", //5
 	"scenes/balls_low_large.nff",	//6
+	"scenes/test1.nff",	//7
 };
 const char* scene_file = scene_files[SCENE_FILE];
 
@@ -259,6 +260,8 @@ void drawPoints(float* vertices, int size_vertices, float* colors, int size_colo
 
 /////////////////////////////////////////////////////////////////////// CALLBACKS
 
+
+
 // Render function by primary ray casting from the eye towards the scene's objects
 bool alreadyRendered = false;
 
@@ -274,10 +277,18 @@ void threadedRenderScene()
 		{
 			for (x = 0; x < RES_X; x++)
 			{
-				Ray ray = scene.calculate_primary_ray(x, y);
-				ray.depth = MAX_DEPTH;
-				ray.ior = 1.0f;
-				vec3 color = scene.ray_trace(ray);
+				vec3 color;
+				if(DRAW_MODE == 3)
+				{
+					Ray ray = scene.calculate_primary_ray(x, y);
+					ray.depth = MAX_DEPTH;
+					ray.ior = 1.0f;
+					color = scene.ray_trace(ray);
+				}else if(DRAW_MODE == 4)
+				{
+					color = scene.ray_trace_dof(x, y);
+				}
+			
 				int vertice_i = std::max(0, y - 1) * RES_X * 2 + x * 2;
 				int color_i = std::max(0, y - 1) * RES_X * 3 + x * 3;
 				vertices[vertice_i] = (float)x;
@@ -302,7 +313,7 @@ void renderScene()
 		alreadyRendered = true;
 	}
 	double start = omp_get_wtime();
-	if (DRAW_MODE == 3)
+	if (DRAW_MODE >= 3)
 	{
 		threadedRenderScene();
 		printf("Terminou! em %f\n", omp_get_wtime() - start);
@@ -475,7 +486,7 @@ int main(int argc, char* argv[])
 		size_colors = 3 * RES_X * RES_Y * sizeof(float);
 		printf("DRAWING MODE: FULL IMAGE\n");
 	}
-	else if (DRAW_MODE == 3) // use omp to draw image at once
+	else if (DRAW_MODE >= 3) // use omp to draw image at once
 	{
 		size_vertices = 2 * RES_X * RES_Y * sizeof(float);
 		size_colors = 3 * RES_X * RES_Y * sizeof(float);

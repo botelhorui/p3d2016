@@ -132,6 +132,50 @@ void Scene::calc_shadow_ray(Hit& hit, Light& light, Ray& ray_out)
 	vec3 light_delta = light.pos + light.a*deltaX + light.b*deltaY;
 	ray_out.dir = normalize(light_delta - hit.pos);
 }
+
+vec3 Scene::ray_trace_dof(int x, int y)
+{
+	// from "2 - Ray_Tracing_Practice.pdf"
+	// page 20
+	double df; //distance to frame
+	double h; // frame height
+	double w; // frame width
+	vec3 xe, ye, ze; // camera space
+	double angle; // half of the field of view
+	ze = camera.from - camera.at;
+	df = ze.length;
+	ze = normalize(ze);	
+	xe = normalize(cross(camera.up, ze));
+	ye = normalize(cross(ze, xe));
+	angle = (M_PI / 180.0) * (camera.angle / 2.0);
+	h = 2 * df * tan(angle);
+	w = (camera.res_x * h) / camera.res_y; // height * ratio
+	// ps is the view plane point
+	double psx = (w * ((1.0 * x) / camera.res_x - .5));
+	double psy = (h * ((1.0 * y) / camera.res_y - .5));
+	double increase = camera.focalDist / camera.viewDist;
+	double px = psx * increase;
+	double py = psy * increase;
+	double pz = -camera.focalDist;
+	vec3 color;
+	vec3 dir = normalize(px*xe + py*ye + pz*ze);
+	Ray r(camera.from,dir, MAX_DEPTH,1.0);
+	//return ray_trace(r);	
+	for (int i = 0; i < DEPTH_OF_FIELD_SAMPLES; i++)
+	{
+		double sx = ((double)rand() / (double)RAND_MAX)*camera.apperture;
+		double sy = ((double)rand() / (double)RAND_MAX)*camera.apperture;
+		vec3 origin = camera.from + sx * xe + sy * ye;
+		vec3 dir = (px - origin.x)*xe + (py - origin.y)*ye + pz * ze;
+		dir = normalize(dir);
+		Ray ray(origin, dir, MAX_DEPTH, 1.0);
+		color += ray_trace(ray);
+	}
+	//Ray mr = calculate_primary_ray(x, y);
+	//return ray_trace(mr);
+	return color / DEPTH_OF_FIELD_SAMPLES;
+}
+
 vec3 Scene::calc_local_color(Ray& ray, Hit& hit)
 {
 	vec3 localColor(0, 0, 0);
