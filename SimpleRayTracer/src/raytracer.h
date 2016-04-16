@@ -10,13 +10,19 @@ balls_high.nff",		//2		126		34
 mount_low.nff",			//3		0.5
 mount_high.nff",		//4		81.8	20
 mount_very_high.nff"	//5		1405	400
-balls_low_large.nff",			//6
-"scenes/test1.nff",	//7
+balls_low_large.nff",	//6
+"scenes/test1.nff",		//7
 */
 #define SCENE_FILE 7
 //#define MAX_DEPTH 6
 #define MAX_DEPTH 6
-/* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame, 3 - full threaded 4 - full threaded dof */
+
+/* Draw Mode:
+	0 - point by point;
+	1 - line by line;
+	2 - full frame,
+	3 - full threaded
+	4 - full threaded dof */
 #define DRAW_MODE 4
 #define DEPTH_OF_FIELD_SAMPLES 4
 
