@@ -2,8 +2,7 @@
 #include <fstream>
 #include <string>
 
-int Scene::load_nff(std::string path)
-{
+int Scene::load_nff(std::string path){
 	std::ifstream f;
 	f.open(path);
 	Material lastMat;
@@ -65,10 +64,31 @@ int Scene::load_nff(std::string path)
 			exit(1);
 		}
 	}
+
 	printf("number of lights %d\n", lights.size());
 	printf("number of planes %d\n", planes.size());
 	printf("number of spheres %d\n", spheres.size());
 	printf("number of triangles %d\n", triangles.size());
+
+	int objectsCount = 0;	
+
+	for each (Plane plane in planes){
+		grid.addPlane(plane);
+		objectsCount++;
+	}
+
+	for each (Sphere sphere in spheres) {
+		grid.addSphere(sphere);
+		objectsCount++;
+	}
+
+	for each (Triangle triangle in triangles) {
+		grid.addTriangle(triangle);
+		objectsCount++;
+	}
+
+	grid.initializeGrid(objectsCount);
+
 	return 0;
 }
 

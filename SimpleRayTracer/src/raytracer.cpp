@@ -658,3 +658,201 @@ vec3 Scene::ray_trace(Ray ray)
 	//return local_color + reflectance * reflect_color + transmitance * refract_color;
 
 }
+
+void Grid::addPlane(Plane plane) {
+	planes.push_back(plane);
+}
+
+void Grid::addSphere(Sphere sphere) {
+	spheres.push_back(sphere);
+}
+
+void Grid::addTriangle(Triangle triangle) {
+	triangles.push_back(triangle);
+}
+
+void Grid::initializeGrid(int objects) {
+	int gridSize = ceil(powf(objects, 1.0f / 3.0f));
+	objectsCount = objects;
+
+	width = gridSize;
+	height = gridSize;
+	depth = gridSize;
+
+	printf("\n\nGrid initialization\n");
+	printf("  Objects: %d\n", objectsCount);
+	printf("  Width : %d\n", width);
+	printf("  Height: %d\n", height);
+	printf("  Depth : %d\n\n", depth);
+
+	calculateMinimumCoordinates();
+	calculateMaximumCoordinates();
+	calculateCells();
+}
+
+void Grid::calculateMinimumCoordinates() {
+	vec3 boundingBox;
+	minimum = vec3(INT_MAX, INT_MAX, INT_MAX);
+/** /
+	for (int i = 0; i < planes.size(); i++){
+		boundingBox = planes[i].getBoundingBox();
+
+		if (boundingBox.x < minimum.x) {
+			minimum.x = boundingBox.x;
+		}
+
+		if (boundingBox.y < minimum.y) {
+			minimum.y = boundingBox.y;
+		}
+
+		if (boundingBox.z < minimum.z) {
+			minimum.z = boundingBox.z;
+		}
+	}
+
+	for (int i = 0; i < spheres.size(); i++) {
+		boundingBox = spheres[i].getBoundingBox();
+
+		if (boundingBox.x < minimum.x) {
+			minimum.x = boundingBox.x;
+		}
+
+		if (boundingBox.y < minimum.y) {
+			minimum.y = boundingBox.y;
+		}
+
+		if (boundingBox.z < minimum.z) {
+			minimum.z = boundingBox.z;
+		}
+	}
+
+	for (int i = 0; i < triangles.size(); i++) {
+		boundingBox = triangles[i].getBoundingBox();
+
+		if (boundingBox.x < minimum.x) {
+			minimum.x = boundingBox.x;
+		}
+
+		if (boundingBox.y < minimum.y) {
+			minimum.y = boundingBox.y;
+		}
+
+		if (boundingBox.z < minimum.z) {
+			minimum.z = boundingBox.z;
+		}
+	}
+/**/
+	for (unsigned i = 0; i < boundingValues.size(); i++) {
+		boundingBox = boundingValues[i];
+
+		if (boundingBox.x < minimum.x) {
+			minimum.x = boundingBox.x;
+		}
+
+		if (boundingBox.y < minimum.y) {
+			minimum.y = boundingBox.y;
+		}
+
+		if (boundingBox.z < minimum.z) {
+			minimum.z = boundingBox.z;
+		}
+	}
+
+	minimum.x -= 0.01f;
+	minimum.y -= 0.01f;
+	minimum.z -= 0.01f;
+
+	printf("Grid minimum bounds: (%f, %f, %f)\n", minimum.x, minimum.y, minimum.z);
+}
+
+void Grid::calculateMaximumCoordinates() {
+	vec3 boundingBox;
+	maximum = vec3(0, 0, 0);
+/** /
+	for (int i = 0; i < planes.size(); i++) {
+		boundingBox = planes[i].getBoundingBox();
+
+		if (boundingBox.x > maximum.x) {
+			maximum.x = boundingBox.x;
+		}
+
+		if (boundingBox.y > maximum.y) {
+			maximum.y = boundingBox.y;
+		}
+
+		if (boundingBox.z > maximum.z) {
+			maximum.z = boundingBox.z;
+		}
+	}
+
+	for (int i = 0; i < spheres.size(); i++) {
+		boundingBox = spheres[i].getBoundingBox();
+
+		if (boundingBox.x > maximum.x) {
+			maximum.x = boundingBox.x;
+		}
+
+		if (boundingBox.y > maximum.y) {
+			maximum.y = boundingBox.y;
+		}
+
+		if (boundingBox.z > maximum.z) {
+			maximum.z = boundingBox.z;
+		}
+	}
+
+	for (int i = 0; i < triangles.size(); i++) {
+		boundingBox = triangles[i].getBoundingBox();
+
+		if (boundingBox.x > maximum.x) {
+			maximum.x = boundingBox.x;
+		}
+
+		if (boundingBox.y > maximum.y) {
+			maximum.y = boundingBox.y;
+		}
+
+		if (boundingBox.z > maximum.z) {
+			maximum.z = boundingBox.z;
+		}
+	}
+/**/
+	for (unsigned i = 0; i < boundingValues.size(); i++) {
+		boundingBox = boundingValues[i];
+
+		if (boundingBox.x > maximum.x) {
+			maximum.x = boundingBox.x;
+		}
+
+		if (boundingBox.y > maximum.y) {
+			maximum.y = boundingBox.y;
+		}
+
+		if (boundingBox.z > maximum.z) {
+			maximum.z = boundingBox.z;
+		}
+	}
+
+	maximum.x += 0.01f;
+	maximum.y += 0.01f;
+	maximum.z += 0.01f;
+
+	printf("Grid maximum bounds: (%f, %f, %f)\n", maximum.x, maximum.y, maximum.z);
+}
+
+void Grid::calculateCells() {
+	float cellFactor = 10.0f;
+	vec3 w(maximum.x - minimum.x, maximum.y - minimum.y, maximum.z - minimum.z);
+	float s = powf(((w.x * w.y * w.z) / (float)objectsCount), 1.0f / 3.0f);
+
+	cells.x = truncf(cellFactor * w.x / s) + 1;
+	cells.y = truncf(cellFactor * w.y / s) + 1;
+	cells.z = truncf(cellFactor * w.z / s) + 1;
+
+	cellDimension.x = (maximum.x - minimum.x) / cells.x;
+	cellDimension.y = (maximum.y - minimum.y) / cells.y;
+	cellDimension.z = (maximum.z - minimum.z) / cells.z;
+
+	printf("\nCells: (%f, %f, %f)", cells.x, cells.y, cells.z);
+	printf("\nCell dimension: (%f, %f, %f)\n\n", cellDimension.x, cellDimension.y, cellDimension.z);
+}
