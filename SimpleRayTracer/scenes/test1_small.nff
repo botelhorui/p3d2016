@@ -8,7 +8,7 @@ view 1
 apperture 1
 angle 45
 hither 0.1
-resolution 512 512
+resolution 256 256
 l -2 0 3 0 0 1 0 1 0 1 1 1
 f 1 0.75 0.33 0.8 0 100000 0 1
 pl 12 12 0 -12 12 0 -12 -12 0

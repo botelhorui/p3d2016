@@ -3,19 +3,20 @@
 #include <iostream>
 #include "vec.h"
 
-/*					Mode:		2		3
-balls_low.nff",			//0		
-balls_medium.nff",		//1		1.6
-balls_high.nff",		//2		126		
-mount_low.nff",			//3		0.5
-mount_high.nff",		//4		81.8	20
-mount_very_high.nff"	//5		1405	400
-balls_low_large.nff",	//6
-"scenes/test1.nff",		//7
+/*							Mode:	2		3
+balls_low.nff",				//0		
+balls_medium.nff",			//1		1.6
+balls_high.nff",			//2		126		
+mount_low.nff",				//3		0.5
+mount_high.nff",			//4		81.8	20
+mount_very_high.nff"		//5		1405	400
+balls_low_large.nff",		//6
+"scenes/test1.nff",			//7
+"scenes/test1_small.nff",	//8
 */
-#define SCENE_FILE 7
+#define SCENE_FILE 8
 #define MAX_DEPTH 6
-#define MAX_DIVISIONS 4
+#define MAX_DIVISIONS 2
 #define MONTE_CARLO_THRESHOLD 0.3
 
 /*
@@ -28,8 +29,8 @@ Draw Mode:
 	5 - full threaded DoF
 	6 - full threaded DoF + monte carlo
 */
-#define DRAW_MODE 4
-#define DEPTH_OF_FIELD_SAMPLES 5
+#define DRAW_MODE 6
+#define DEPTH_OF_FIELD_SAMPLES 50
 
 
 class Material{
@@ -179,8 +180,9 @@ class Scene{
 		vec3 calc_refract_color(Ray ray, Hit& hit);
 		void calc_intersection(Ray& ray, Hit& hit);
 		vec3 ray_trace(Ray ray);
-		vec3 ray_trace_dof(int i, int y);
+		vec3 ray_trace_dof(double x, double y);
 		vec3 ray_trace_monte_carlo(int x, int y);
+		vec3 ray_trace_monte_carlo_dof(int x, int y);
 
 		void Scene::calc_shadow_ray(Hit& hit, Light& light_pos, Ray& ray_out);
 
@@ -188,5 +190,7 @@ class Scene{
 		Ray calculate_primary_ray_monte_carlo(float x, float y, float deltaX, float deltaY);
 		vec3 calculatePrimaryRaysMonteCarlo(int divisions, float x, float y);
 		vec3 calculateSecondaryRaysMonteCarlo(int divisions, float x, float y, vec3 colorPixelsPrevious[4][4], int index);
+		vec3 calculatePrimaryRaysMonteCarlo_DoF(int divisions, float x, float y);
+		vec3 calculateSecondaryRaysMonteCarlo_DoF(int divisions, float x, float y, vec3 colorPixelsPrevious[4][4], int index);
 };
 
