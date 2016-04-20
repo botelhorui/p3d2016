@@ -452,7 +452,7 @@ void init(int argc, char* argv[])
 	setupCallbacks();
 }
 
-int main(int argc, char* argv[])
+int main2(int argc, char* argv[])
 {
 	if (scene.load_nff(scene_file))
 	{

@@ -29,7 +29,7 @@ Draw Mode:
 	5 - full threaded DoF
 	6 - full threaded DoF + monte carlo
 */
-#define DRAW_MODE 6
+#define DRAW_MODE 3
 #define DEPTH_OF_FIELD_SAMPLES 50
 
 
