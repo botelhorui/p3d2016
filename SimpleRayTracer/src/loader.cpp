@@ -44,15 +44,19 @@ int Scene::load_nff(std::string path){
 		else if (type == "pl")
 		{
 			vec3 v0, v1, v2;
-			f >> v0 >> v1 >> v2;
-			planes.push_back(Plane(v0, v1, v2, lastMat));
+			f >> v0 >> v1 >> v2;			
+			Plane* obj = new Plane(v0, v1, v2, lastMat);	
+			// Planes are not added to scene.objects because they are a particular case
+			planes.push_back(obj);
 		}
 		else if (type == "s")
 		{
 			vec3 pos;
 			double radius;
-			f >> pos >> radius;
-			spheres.push_back(Sphere(pos, radius, lastMat));
+			f >> pos >> radius;			
+			Sphere* obj = new Sphere(pos, radius, lastMat);
+			objects.push_back(obj);
+			spheres.push_back(obj);
 		}
 		else if (type == "p")
 		{
@@ -60,7 +64,9 @@ int Scene::load_nff(std::string path){
 			f >> numVertices;
 			vec3 v0, v1, v2;
 			f >> v0 >> v1 >> v2;
-			triangles.push_back(Triangle(v0, v1, v2, lastMat));
+			Triangle* obj = new Triangle(v0, v1, v2, lastMat);
+			objects.push_back(obj);
+			triangles.push_back(obj);
 		}
 		else
 		{
@@ -75,25 +81,10 @@ int Scene::load_nff(std::string path){
 	printf("number of spheres %d\n", spheres.size());
 	printf("number of triangles %d\n", triangles.size());
 
-	int objectsCount = 0;	
-
-	for each (Plane plane in planes){
-		grid.addPlane(plane);
-		objectsCount++;
-	}
-
-	for each (Sphere sphere in spheres) {
-		grid.addSphere(sphere);
-		objectsCount++;
-	}
-
-	for each (Triangle triangle in triangles) {
-		grid.addTriangle(triangle);
-		objectsCount++;
-	}
-
-	grid.initializeGrid(objectsCount);
-
+	// TODO
+	grid.scene = this;
+	grid.initializeGrid();
+		
 	return 0;
 }
 

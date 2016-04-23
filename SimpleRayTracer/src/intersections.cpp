@@ -2,6 +2,27 @@
 #include "raytracer.h"
 #include <algorithm>
 
+
+/*
+Intput: ray
+Output: hit
+sets hit's fields to closest intersection
+*/
+void Scene::calc_intersection(Ray& ray, Hit& hit) {
+	for (Plane* pl : planes)
+	{
+		pl->calcIntersection(ray, hit);
+	}
+	if (DRAW_MODE == 7)
+	{
+		grid.calc_hit(ray, hit);
+		return;
+	}	
+	for (Object* obj : objects)
+	{
+		obj->calcIntersection(ray, hit);
+	}
+}
 void Plane::calcIntersection(const Ray& ray, Hit& hit)
 {
 	double denom = dot(normal, ray.dir);
@@ -151,4 +172,5 @@ void Triangle::calcIntersection(const Ray& ray, Hit& hit)
 		hit.updateMinHit(P, normal, false, mat, dist);	
 	}
 }
+
 

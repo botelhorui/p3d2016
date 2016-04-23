@@ -68,7 +68,7 @@ Ray Scene::calculate_primary_ray(int x, int y)
 }
 
 // Monte Carlo begins
-Ray Scene::calculate_primary_ray_monte_carlo(float x, float y, float deltaX, float deltaY){
+Ray Scene::calculate_primary_ray_monte_carlo(double x, double y, double deltaX, double deltaY){
 	Ray r;
 	double df; //distance to frame
 	double h; // frame height
@@ -85,8 +85,8 @@ Ray Scene::calculate_primary_ray_monte_carlo(float x, float y, float deltaX, flo
 	ye = normalize(cross(ze, xe));
 	r.origin = camera.from;
 
-	r.dir = (w * (((float)x + deltaX) / camera.res_x - 0.5)) * xe +
-		(h * (((float)y + deltaY) / camera.res_y - 0.5)) * ye +
+	r.dir = (w * (((double)x + deltaX) / camera.res_x - 0.5)) * xe +
+		(h * (((double)y + deltaY) / camera.res_y - 0.5)) * ye +
 		(-df) * ze;
 
 	r.dir = normalize(r.dir);
@@ -94,12 +94,12 @@ Ray Scene::calculate_primary_ray_monte_carlo(float x, float y, float deltaX, flo
 	return r;
 }
 
-vec3 Scene::calculateSecondaryRaysMonteCarlo(int divisions, float x, float y, vec3 colorPixelsPrevious[4][4], int index) {
+vec3 Scene::calculateSecondaryRaysMonteCarlo(int divisions, double x, double y, vec3 colorPixelsPrevious[4][4], int index) {
 	Ray ray;
 	vec3 color;
-	float thresholdCompare = MONTE_CARLO_THRESHOLD;
-	float divisionFactor = 0.5f / (powf(2.0f, divisions));
-	//float divisionFactorCorner = 1.0f / ((float)divisions * 2.0);
+	double thresholdCompare = MONTE_CARLO_THRESHOLD;
+	double divisionFactor = 0.5f / (powf(2.0f, divisions));
+	//double divisionFactorCorner = 1.0f / ((double)divisions * 2.0);
 	bool dividePixel = false;
 	vec3 colorPixels[4][4];
 
@@ -186,10 +186,10 @@ vec3 Scene::calculateSecondaryRaysMonteCarlo(int divisions, float x, float y, ve
 	return color;
 }
 
-vec3 Scene::calculatePrimaryRaysMonteCarlo(int divisions, float x, float y) {
+vec3 Scene::calculatePrimaryRaysMonteCarlo(int divisions, double x, double y) {
 	Ray ray;
 	vec3 color;
-	float thresholdCompare = MONTE_CARLO_THRESHOLD;
+	double thresholdCompare = MONTE_CARLO_THRESHOLD;
 	vec3 colorPixels[4][4]; // The first index is the sub-pixel, and the second index is the ray color
 	bool dividePixel = false;
 
@@ -203,7 +203,7 @@ vec3 Scene::calculatePrimaryRaysMonteCarlo(int divisions, float x, float y) {
 	// Calculate the 4 primary rays (1, 3, 7, 9) for the main pixel (each ray for each corner)
 	for (int pY = 0; pY < 2; pY++) {
 		for (int pX = 0; pX < 2; pX++) {
-			ray = calculate_primary_ray_monte_carlo(x, y, (float)pX, (float)pY);
+			ray = calculate_primary_ray_monte_carlo(x, y, (double)pX, (double)pY);
 			ray.depth = MAX_DEPTH;
 			ray.ior = 1.0f;
 			colorPixels[pY * 2 + pX][0] = ray_trace(ray);
@@ -291,65 +291,11 @@ vec3 Scene::calculatePrimaryRaysMonteCarlo(int divisions, float x, float y) {
 }
 
 vec3 Scene::ray_trace_monte_carlo(int x, int y) {
-	return calculatePrimaryRaysMonteCarlo(0, (float)x, (float)y);
+	return calculatePrimaryRaysMonteCarlo(0, (double)x, (double)y);
 }
 // Monte Carlo ends
 
-vec3 Scene::calc_refract_color(Ray ray, Hit& hit)
-{
-	if(hit.mat.T <= 0.0)
-	{
-		return vec3();
-	}
-	float ior = hit.mat.ior;
-	if(!hit.into_inside)
-	{
-		ior = 1.0;
-	}
-	vec3 refract_dir;
-	if(refract(hit.normal, ray.dir, ray.ior, ior, refract_dir))
-	{
-		Ray refractRay(hit.pos, refract_dir, ray.depth - 1, ior);
-		refractRay.offset(EPSILON);
-		return ray_trace(refractRay);
-	}
-		// Total internal reflection
-		return vec3();
-	
-	
-}
 
-vec3 Scene::calc_reflect_color(Ray ray, Hit& hit)
-{
-	
-	if (hit.mat.Ks <= 0.0f)
-	{
-		return vec3(0, 0, 0);
-	}
-	vec3 reflectDir = reflect(hit.normal, ray.dir);
-	Ray reflectRay(hit.pos, reflectDir, ray.depth - 1, ray.ior);
-	reflectRay.offset(EPSILON);
-	return ray_trace(reflectRay);
-}
-
-void Scene::calc_shadow_intersections(Ray& ray, Hit& hit)
-{
-	for (auto& obj : planes)
-	{
-		obj.calcIntersection(ray, hit);
-		//if (hit.dist > 0) return;
-	}
-	for (auto& obj : spheres)
-	{
-		obj.calcIntersection(ray, hit);
-		//if (hit.dist > 0) return;
-	}
-	for (auto& obj : triangles)
-	{
-		obj.calcIntersection(ray, hit);
-		//if (hit.dist > 0) return;
-	}
-}
 
 void Scene::calc_shadow_ray(Hit& hit, Light& light, Ray& ray_out)
 {
@@ -358,6 +304,18 @@ void Scene::calc_shadow_ray(Hit& hit, Light& light, Ray& ray_out)
 	ray_out.origin = hit.pos;
 	vec3 light_delta = light.pos + light.area_x*deltaX + light.area_y*deltaY;
 	ray_out.dir = normalize(light_delta - hit.pos);
+}
+
+void Scene::free()
+{
+	for(auto& obj:objects)
+	{
+		delete obj;
+	}
+	for(auto& pl:planes)
+	{
+		delete pl;
+	}
 }
 
 vec3 Scene::ray_trace_dof(double x, double y){
@@ -408,12 +366,12 @@ vec3 Scene::ray_trace_dof(double x, double y){
 }
 
 
-vec3 Scene::calculateSecondaryRaysMonteCarlo_DoF(int divisions, float x, float y, vec3 colorPixelsPrevious[4][4], int index) {
+vec3 Scene::calculateSecondaryRaysMonteCarlo_DoF(int divisions, double x, double y, vec3 colorPixelsPrevious[4][4], int index) {
 	Ray ray;
 	vec3 color;
-	float thresholdCompare = MONTE_CARLO_THRESHOLD;
-	float divisionFactor = (0.5f / (powf(2.0f, divisions)));
-	//float divisionFactorCorner = 1.0f / ((float)divisions * 2.0);
+	double thresholdCompare = MONTE_CARLO_THRESHOLD;
+	double divisionFactor = (0.5f / (powf(2.0f, divisions)));
+	//double divisionFactorCorner = 1.0f / ((double)divisions * 2.0);
 	bool dividePixel = false;
 	vec3 colorPixels[4][4];
 
@@ -485,10 +443,10 @@ vec3 Scene::calculateSecondaryRaysMonteCarlo_DoF(int divisions, float x, float y
 	return color;
 }
 
-vec3 Scene::calculatePrimaryRaysMonteCarlo_DoF(int divisions, float x, float y) {
+vec3 Scene::calculatePrimaryRaysMonteCarlo_DoF(int divisions, double x, double y) {
 	Ray ray;
 	vec3 color;
-	float thresholdCompare = MONTE_CARLO_THRESHOLD;
+	double thresholdCompare = MONTE_CARLO_THRESHOLD;
 	vec3 colorPixels[4][4]; // The first index is the sub-pixel, and the second index is the ray color
 	bool dividePixel = false;
 
@@ -502,7 +460,7 @@ vec3 Scene::calculatePrimaryRaysMonteCarlo_DoF(int divisions, float x, float y) 
 	// Calculate the 4 primary rays (1, 3, 7, 9) for the main pixel (each ray for each corner)
 	for (int pY = 0; pY < 2; pY++) {
 		for (int pX = 0; pX < 2; pX++) {
-			colorPixels[pY * 2 + pX][0] = ray_trace_dof(x + (float)pX, y + (float)pY);
+			colorPixels[pY * 2 + pX][0] = ray_trace_dof(x + (double)pX, y + (double)pY);
 		}
 	}
 
@@ -572,8 +530,49 @@ vec3 Scene::calculatePrimaryRaysMonteCarlo_DoF(int divisions, float x, float y) 
 }
 
 vec3 Scene::ray_trace_monte_carlo_dof(int x, int y) {
-	return calculatePrimaryRaysMonteCarlo_DoF(0, (float)x, (float)y);
+	return calculatePrimaryRaysMonteCarlo_DoF(0, (double)x, (double)y);
 }
+
+vec3 Scene::calc_refract_color(Ray ray, Hit& hit)
+{
+	if (hit.mat.T <= 0.0)
+	{
+		return vec3();
+	}
+	double ior = hit.mat.ior;
+	if (!hit.into_inside)
+	{
+		ior = 1.0;
+	}
+	vec3 refract_dir;
+	if (refract(hit.normal, ray.dir, ray.ior, ior, refract_dir))
+	{
+		Ray refractRay(hit.pos, refract_dir, ray.depth - 1, ior);
+		refractRay.offset(EPSILON);
+		return ray_trace(refractRay);
+	}
+	// Total internal reflection
+	return vec3();
+
+
+}
+
+
+
+vec3 Scene::calc_reflect_color(Ray ray, Hit& hit)
+{
+
+	if (hit.mat.Ks <= 0.0f)
+	{
+		return vec3(0, 0, 0);
+	}
+	vec3 reflectDir = reflect(hit.normal, ray.dir);
+	Ray reflectRay(hit.pos, reflectDir, ray.depth - 1, ray.ior);
+	reflectRay.offset(EPSILON);
+	return ray_trace(reflectRay);
+}
+
+
 
 vec3 Scene::calc_local_color(Ray& ray, Hit& hit){
 	vec3 localColor(0, 0, 0);
@@ -590,7 +589,7 @@ vec3 Scene::calc_local_color(Ray& ray, Hit& hit){
 			Ray shadow_ray;
 			calc_shadow_ray(hit, light, shadow_ray);
 			shadow_ray.offset(EPSILON);
-			calc_shadow_intersections(shadow_ray, shadow_hit);
+			calc_intersection(shadow_ray, shadow_hit);
 			if (shadow_hit.dist > 0 && shadow_hit.dist < light_vec.length)
 			{
 				continue;
@@ -620,20 +619,6 @@ vec3 Scene::calc_local_color(Ray& ray, Hit& hit){
 	return localColor;
 }
 
-void Scene::calc_intersection(Ray& ray, Hit& hit){
-	for (auto& obj : planes)
-	{
-		obj.calcIntersection(ray, hit);
-	}
-	for (auto& obj : spheres)
-	{
-		obj.calcIntersection(ray, hit);
-	}
-	for (auto& obj : triangles)
-	{
-		obj.calcIntersection(ray, hit);
-	}
-}
 
 vec3 Scene::ray_trace(Ray ray)
 {
@@ -643,7 +628,7 @@ vec3 Scene::ray_trace(Ray ray)
 	}
 	Hit hit;
 	calc_intersection(ray, hit);
-	if (hit.dist == -1)
+	if (!hit.found)
 	{
 		return backgroundColor;
 	}
@@ -657,202 +642,4 @@ vec3 Scene::ray_trace(Ray ray)
 	return local_color + (1.0 - hit.mat.T)* 0.7f * reflect_color + hit.mat.T * refract_color;
 	//return local_color + reflectance * reflect_color + transmitance * refract_color;
 
-}
-
-void Grid::addPlane(Plane plane) {
-	planes.push_back(plane);
-}
-
-void Grid::addSphere(Sphere sphere) {
-	spheres.push_back(sphere);
-}
-
-void Grid::addTriangle(Triangle triangle) {
-	triangles.push_back(triangle);
-}
-
-void Grid::initializeGrid(int objects) {
-	int gridSize = ceil(powf(objects, 1.0f / 3.0f));
-	objectsCount = objects;
-
-	width = gridSize;
-	height = gridSize;
-	depth = gridSize;
-
-	printf("\n\nGrid initialization\n");
-	printf("  Objects: %d\n", objectsCount);
-	printf("  Width : %d\n", width);
-	printf("  Height: %d\n", height);
-	printf("  Depth : %d\n\n", depth);
-
-	calculateMinimumCoordinates();
-	calculateMaximumCoordinates();
-	calculateCells();
-}
-
-void Grid::calculateMinimumCoordinates() {
-	vec3 boundingBox;
-	minimum = vec3(INT_MAX, INT_MAX, INT_MAX);
-/** /
-	for (int i = 0; i < planes.size(); i++){
-		boundingBox = planes[i].getBoundingBox();
-
-		if (boundingBox.x < minimum.x) {
-			minimum.x = boundingBox.x;
-		}
-
-		if (boundingBox.y < minimum.y) {
-			minimum.y = boundingBox.y;
-		}
-
-		if (boundingBox.z < minimum.z) {
-			minimum.z = boundingBox.z;
-		}
-	}
-
-	for (int i = 0; i < spheres.size(); i++) {
-		boundingBox = spheres[i].getBoundingBox();
-
-		if (boundingBox.x < minimum.x) {
-			minimum.x = boundingBox.x;
-		}
-
-		if (boundingBox.y < minimum.y) {
-			minimum.y = boundingBox.y;
-		}
-
-		if (boundingBox.z < minimum.z) {
-			minimum.z = boundingBox.z;
-		}
-	}
-
-	for (int i = 0; i < triangles.size(); i++) {
-		boundingBox = triangles[i].getBoundingBox();
-
-		if (boundingBox.x < minimum.x) {
-			minimum.x = boundingBox.x;
-		}
-
-		if (boundingBox.y < minimum.y) {
-			minimum.y = boundingBox.y;
-		}
-
-		if (boundingBox.z < minimum.z) {
-			minimum.z = boundingBox.z;
-		}
-	}
-/**/
-	for (unsigned i = 0; i < boundingValues.size(); i++) {
-		boundingBox = boundingValues[i];
-
-		if (boundingBox.x < minimum.x) {
-			minimum.x = boundingBox.x;
-		}
-
-		if (boundingBox.y < minimum.y) {
-			minimum.y = boundingBox.y;
-		}
-
-		if (boundingBox.z < minimum.z) {
-			minimum.z = boundingBox.z;
-		}
-	}
-
-	minimum.x -= 0.01f;
-	minimum.y -= 0.01f;
-	minimum.z -= 0.01f;
-
-	printf("Grid minimum bounds: (%f, %f, %f)\n", minimum.x, minimum.y, minimum.z);
-}
-
-void Grid::calculateMaximumCoordinates() {
-	vec3 boundingBox;
-	maximum = vec3(0, 0, 0);
-/** /
-	for (int i = 0; i < planes.size(); i++) {
-		boundingBox = planes[i].getBoundingBox();
-
-		if (boundingBox.x > maximum.x) {
-			maximum.x = boundingBox.x;
-		}
-
-		if (boundingBox.y > maximum.y) {
-			maximum.y = boundingBox.y;
-		}
-
-		if (boundingBox.z > maximum.z) {
-			maximum.z = boundingBox.z;
-		}
-	}
-
-	for (int i = 0; i < spheres.size(); i++) {
-		boundingBox = spheres[i].getBoundingBox();
-
-		if (boundingBox.x > maximum.x) {
-			maximum.x = boundingBox.x;
-		}
-
-		if (boundingBox.y > maximum.y) {
-			maximum.y = boundingBox.y;
-		}
-
-		if (boundingBox.z > maximum.z) {
-			maximum.z = boundingBox.z;
-		}
-	}
-
-	for (int i = 0; i < triangles.size(); i++) {
-		boundingBox = triangles[i].getBoundingBox();
-
-		if (boundingBox.x > maximum.x) {
-			maximum.x = boundingBox.x;
-		}
-
-		if (boundingBox.y > maximum.y) {
-			maximum.y = boundingBox.y;
-		}
-
-		if (boundingBox.z > maximum.z) {
-			maximum.z = boundingBox.z;
-		}
-	}
-/**/
-	for (unsigned i = 0; i < boundingValues.size(); i++) {
-		boundingBox = boundingValues[i];
-
-		if (boundingBox.x > maximum.x) {
-			maximum.x = boundingBox.x;
-		}
-
-		if (boundingBox.y > maximum.y) {
-			maximum.y = boundingBox.y;
-		}
-
-		if (boundingBox.z > maximum.z) {
-			maximum.z = boundingBox.z;
-		}
-	}
-
-	maximum.x += 0.01f;
-	maximum.y += 0.01f;
-	maximum.z += 0.01f;
-
-	printf("Grid maximum bounds: (%f, %f, %f)\n", maximum.x, maximum.y, maximum.z);
-}
-
-void Grid::calculateCells() {
-	float cellFactor = 10.0f;
-	vec3 w(maximum.x - minimum.x, maximum.y - minimum.y, maximum.z - minimum.z);
-	float s = powf(((w.x * w.y * w.z) / (float)objectsCount), 1.0f / 3.0f);
-
-	cells.x = truncf(cellFactor * w.x / s) + 1;
-	cells.y = truncf(cellFactor * w.y / s) + 1;
-	cells.z = truncf(cellFactor * w.z / s) + 1;
-
-	cellDimension.x = (maximum.x - minimum.x) / cells.x;
-	cellDimension.y = (maximum.y - minimum.y) / cells.y;
-	cellDimension.z = (maximum.z - minimum.z) / cells.z;
-
-	printf("\nCells: (%f, %f, %f)", cells.x, cells.y, cells.z);
-	printf("\nCell dimension: (%f, %f, %f)\n\n", cellDimension.x, cellDimension.y, cellDimension.z);
 }

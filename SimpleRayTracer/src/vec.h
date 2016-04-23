@@ -104,3 +104,19 @@ inline std::istream& operator>>(std::istream& i, vec3& v)
 	return i >> v.x >> v.y >> v.z;
 }
 
+inline double min3(double x, double y, double z)
+{
+	double min = x;
+	if (y < min) min = y;
+	if (z < min) min = z;
+	return min;
+}
+
+inline double max3(double x, double y, double z)
+{
+	double max = x;
+	if (y > max) max = y;
+	if (z > max) max = z;
+	return max;
+}
+

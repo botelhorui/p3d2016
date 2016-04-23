@@ -73,26 +73,26 @@ int main(int argc, char *argv[])
 	}
 	std::stringstream ss;
 	ss << "output/" << scene_file << "." << currentDateTime() << ".png";
-	std::string sfn = ss.str();
+	std::string output_file = ss.str();
 	//const char* filename = sfn.c_str();
-	const char* filename = sfn.c_str();
+	const char* filename = output_file.c_str();
 
 	/*generate some image*/
 	unsigned width = scene.camera.res_x, height = scene.camera.res_y;
 	unsigned char* image = (unsigned char*)malloc(width * height * 4);
 	double start = omp_get_wtime();
-#pragma omp parallel
+//#pragma omp parallel
 	{		
 		int x, yy;
-#pragma omp master
+//#pragma omp master
 		printf("num threads %d\n", omp_get_num_threads());
-#pragma omp for schedule(dynamic)
+//#pragma omp for schedule(dynamic)
 		for (yy = 0; yy < height; yy++)
 			for (x = 0; x < width; x++)
 			{
 				int y = height - yy;
 				vec3 color;
-				if (DRAW_MODE == 3) {
+				if (DRAW_MODE == 3 || DRAW_MODE == 7) {
 					Ray ray = scene.calculate_primary_ray(x, y);
 					ray.depth = MAX_DEPTH;
 					ray.ior = 1.0f;
@@ -116,17 +116,18 @@ int main(int argc, char *argv[])
 				image[i + 3] = 255;
 			}	
 	}
-
+	double end = omp_get_wtime() - start;
 	
 	/*Encode the image*/
 	unsigned error = lodepng_encode32_file(filename, image, width, height);
 
-	printf("filename '%s\n'", filename);
+	printf("filename '%s'\n", filename);
 	/*if there's an error, display it*/
 	if (error) printf("error %u: %s\n", error, lodepng_error_text(error));
 
-	printf("Terminou! em %f\n", omp_get_wtime() - start);
+	printf("Terminou! em %f\n", end);
 
+	scene.free();
 	free(image);
 
 	//getchar();

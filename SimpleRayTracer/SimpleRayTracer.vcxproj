@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\grid.cpp" />
     <ClCompile Include="src\intersections.cpp" />
     <ClCompile Include="src\loader.cpp" />
     <ClCompile Include="src\lodepng.cpp" />
@@ -26,6 +27,7 @@
     <ClCompile Include="src\raytracer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="objects.h" />
     <ClInclude Include="src\lodepng.h" />
     <ClInclude Include="src\raytracer.h" />
     <ClInclude Include="src\vec.h" />
