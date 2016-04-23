@@ -3,22 +3,27 @@
 #include <iostream>
 #include "vec.h"
 
-/*							Mode:	2		3
-balls_low.nff",				//0		
-balls_medium.nff",			//1		1.6
-balls_high.nff",			//2		126		
-mount_low.nff",				//3		0.5
-mount_high.nff",			//4		81.8	20
-mount_very_high.nff"		//5		1405	400
-balls_low_large.nff",		//6
-"scenes/test1.nff",			//7
-"scenes/test1_small.nff",	//8
+/*							
+std::string scene_files[] = {
+"balls_low.nff",		 //0
+"balls_medium.nff",			//1
+"balls_high.nff",		//2
+"mount_low.nff",		 //3
+"mount_high.nff",		//4
+"mount_very_high.nff",	//5
+"balls_low_large.nff",	//6
+"three_balls.nff",		//7
+"three_balls_small.nff",		//8
+};
 */
-#define SCENE_FILE 8
+
+#define SCENE_FILE 7
+
 #define MAX_DEPTH 6
 #define MAX_DIVISIONS 2
 #define MONTE_CARLO_THRESHOLD 0.3
-
+#define DEPTH_OF_FIELD_SAMPLES 5
+#define SOFT_SHADOWS_SAMPLES 32
 /*
 Draw Mode:
 	0 - point by point;
@@ -30,7 +35,7 @@ Draw Mode:
 	6 - full threaded DoF + monte carlo
 */
 #define DRAW_MODE 3
-#define DEPTH_OF_FIELD_SAMPLES 50
+
 
 
 class Material {
@@ -93,9 +98,10 @@ public:
 class Light {
 public:
 	vec3 pos;
-	vec3 a, b;
+	vec3 area_x=vec3(1,0,0);
+	vec3 area_y=vec3(0, 1, 0);
 	vec3 color;
-	Light(vec3 pos, vec3 color, vec3 a, vec3 b) : pos(pos), color(color), a(a), b(b) {}
+	Light(vec3 pos, vec3 color, vec3 a, vec3 b) : pos(pos), color(color), area_x(a), area_y(b) {}
 };
 
 class Camera {
@@ -103,9 +109,9 @@ public:
 	vec3 from;
 	vec3 at;
 	vec3 up;
-	double focalDist;
-	double viewDist;
-	double apperture;
+	double focalDist=3;
+	double viewDist=0.5;
+	double apperture=0.25;
 	double angle;
 	double hither;
 	int res_x;

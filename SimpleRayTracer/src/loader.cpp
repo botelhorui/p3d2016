@@ -19,17 +19,22 @@ int Scene::load_nff(std::string path){
 			f >> type >> camera.from;
 			f >> type >> camera.at;
 			f >> type >> camera.up;
-			f >> type >> camera.focalDist;
-			f >> type >> camera.viewDist;
-			f >> type >> camera.apperture;
-			f >> type >> camera.angle;
+			f >> type;
+			if(type == "focal"){
+				f >>  camera.focalDist;
+				f >> type >> camera.viewDist;
+				f >> type >> camera.apperture;
+				f >> type; // read 'angle'
+			} // else angle
+			f >> camera.angle;
 			f >> type >> camera.hither;
 			f >> type >> camera.res_x >> camera.res_y;
 		}
 		else if (type == "l")
 		{
 			vec3 pos, a,b,color;
-			f >> pos >> a >> b >> color;
+			f >> pos >> color;
+			// light's area_x and area_y are not initialized since we use default values
 			lights.push_back(Light(pos, a, b, color));
 		}
 		else if (type == "f")

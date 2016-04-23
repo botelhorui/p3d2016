@@ -356,7 +356,7 @@ void Scene::calc_shadow_ray(Hit& hit, Light& light, Ray& ray_out)
 	double deltaX = ((double)rand()/(double)RAND_MAX)*0.25;
 	double deltaY = ((double)rand()/ (double)RAND_MAX)*0.25;
 	ray_out.origin = hit.pos;
-	vec3 light_delta = light.pos + light.a*deltaX + light.b*deltaY;
+	vec3 light_delta = light.pos + light.area_x*deltaX + light.area_y*deltaY;
 	ray_out.dir = normalize(light_delta - hit.pos);
 }
 
@@ -577,11 +577,11 @@ vec3 Scene::ray_trace_monte_carlo_dof(int x, int y) {
 
 vec3 Scene::calc_local_color(Ray& ray, Hit& hit){
 	vec3 localColor(0, 0, 0);
-	const double NUM_SAMPLES = 1 << 8;
 	for (auto& light: lights)
 	{
 		vec3 c(0, 0, 0);
-		for (int si = 0; si < NUM_SAMPLES; si++)
+		// calculate area light shadow using random rays
+		for (int si = 0; si < SOFT_SHADOWS_SAMPLES; si++)
 		{
 			Hit shadow_hit;
 			vec3 light_vec = light.pos - hit.pos;
@@ -614,7 +614,7 @@ vec3 Scene::calc_local_color(Ray& ray, Hit& hit){
 			c += diffuseColor + specularcolor;
 		}
 
-		localColor += (1.0/NUM_SAMPLES)*c;
+		localColor += (1.0/ SOFT_SHADOWS_SAMPLES)*c;
 	}
 	
 	return localColor;
@@ -649,8 +649,8 @@ vec3 Scene::ray_trace(Ray ray)
 	}
 	vec3 local_color = calc_local_color(ray, hit);
 
-	double reflectance = rSchlick2(hit.normal, ray.dir, ray.ior, hit.mat.ior);
-	double transmitance = 1.0 - reflectance;
+	//double reflectance = rSchlick2(hit.normal, ray.dir, ray.ior, hit.mat.ior);
+	//double transmitance = 1.0 - reflectance;
 	vec3 reflect_color = calc_reflect_color(ray, hit);
 	vec3 refract_color = calc_refract_color(ray, hit);
 

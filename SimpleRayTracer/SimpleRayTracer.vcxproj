@@ -19,11 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main2.cpp" />
     <ClCompile Include="src\intersections.cpp" />
     <ClCompile Include="src\loader.cpp" />
     <ClCompile Include="src\lodepng.cpp" />
-    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\main2.cpp" />
     <ClCompile Include="src\raytracer.cpp" />
   </ItemGroup>
   <ItemGroup>

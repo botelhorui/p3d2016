@@ -9,6 +9,7 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
+
 #include <stdlib.h>
 #include <iostream>
 #include <string>
@@ -23,7 +24,7 @@
 #include "raytracer.h"
 #include <algorithm>
 
-const char* scene_files[] = {
+const char* scene_files2[] = {
 	"scenes/balls_low.nff", //0
 	"scenes/balls_medium.nff", //1
 	"scenes/balls_high.nff", //2
@@ -34,7 +35,7 @@ const char* scene_files[] = {
 	"scenes/test1.nff",	//7
 	"scenes/test1_small.nff",	//7
 };
-const char* scene_file = scene_files[SCENE_FILE];
+const char* scene_file2 = scene_files[SCENE_FILE];
 
 #define CAPTION "ray tracer"
 #define VERTEX_COORD_ATTRIB 0
@@ -515,6 +516,7 @@ int main2(int argc, char* argv[])
 	glutMainLoop();
 	exit(EXIT_SUCCESS);
 }
+
 
 ///////////////////////////////////////////////////////////////////////
 
