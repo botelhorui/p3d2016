@@ -9,18 +9,18 @@ Output: hit
 sets hit's fields to closest intersection
 */
 void Scene::calc_intersection(Ray& ray, Hit& hit) {
+	if (DRAW_MODE == GRID)
+	{
+		grid.calc_hit(ray, hit);
+	}else{
+		for (Object* obj : objects)
+		{
+			obj->calcIntersection(ray, hit);
+		}
+	}
 	for (Plane* pl : planes)
 	{
 		pl->calcIntersection(ray, hit);
-	}
-	if (DRAW_MODE == 7)
-	{
-		grid.calc_hit(ray, hit);
-		return;
-	}	
-	for (Object* obj : objects)
-	{
-		obj->calcIntersection(ray, hit);
 	}
 }
 void Plane::calcIntersection(const Ray& ray, Hit& hit)

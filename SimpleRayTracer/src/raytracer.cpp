@@ -299,11 +299,40 @@ vec3 Scene::ray_trace_monte_carlo(int x, int y) {
 
 void Scene::calc_shadow_ray(Hit& hit, Light& light, Ray& ray_out)
 {
-	double deltaX = ((double)rand()/(double)RAND_MAX)*0.25;
-	double deltaY = ((double)rand()/ (double)RAND_MAX)*0.25;
 	ray_out.origin = hit.pos;
-	vec3 light_delta = light.pos + light.area_x*deltaX + light.area_y*deltaY;
-	ray_out.dir = normalize(light_delta - hit.pos);
+	if(SOFT_SHADOWS_ON)
+	{
+		vec3 light_delta;
+		double deltaX = 0;
+		double deltaY = 0;
+		double deltaZ = 0;
+		if(SOFT_SHADOW_TYPE == AREA)
+		{
+			deltaX = random()*LIGHT_AREA_SIDE;
+			deltaY = random()*LIGHT_AREA_SIDE;
+			light_delta = light.pos + 
+				LIGHT_AREA_U*deltaX +
+				LIGHT_AREA_V*deltaY;
+		}else if(SOFT_SHADOW_TYPE == SPHERE)
+		{
+			double theta = random()*M_PI;
+			double phi = random()*M_PI;
+			double cos_theta = cos(theta);
+			double sin_theta = sin(theta);
+			double sin_phi = sin(phi);
+			double cos_phi = cos(phi);
+			deltaX = LIGHT_RADIUS * sin_phi * cos_theta;
+			deltaY = LIGHT_RADIUS * sin_phi * sin_theta;
+			deltaZ = LIGHT_RADIUS * cos_phi;
+			light_delta = light.pos + vec3(deltaX, deltaY, deltaZ);
+		}
+		ray_out.dir = normalize(light_delta - hit.pos);
+	}else
+	{
+		ray_out.dir = normalize(light.pos - hit.pos);
+	}
+
+	
 }
 
 void Scene::free()
@@ -580,6 +609,7 @@ vec3 Scene::calc_local_color(Ray& ray, Hit& hit){
 	{
 		vec3 c(0, 0, 0);
 		// calculate area light shadow using random rays
+		double num_samples = SOFT_SHADOWS_ON ? SOFT_SHADOWS_SAMPLES : 1;
 		for (int si = 0; si < SOFT_SHADOWS_SAMPLES; si++)
 		{
 			Hit shadow_hit;

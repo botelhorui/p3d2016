@@ -23,9 +23,9 @@ void Grid::initializeGrid()
 	// calculate number of cells 
 	int num_objects = scene->objects.size();
 	// width in x,y,z direction
-	double wx = bbox.max.x - bbox.min.x;
-	double wy = bbox.max.y - bbox.min.y;
-	double wz = bbox.max.z - bbox.min.z;
+	wx = bbox.max.x - bbox.min.x;
+	wy = bbox.max.y - bbox.min.y;
+	wz = bbox.max.z - bbox.min.z;
 	double m = GRID_WIDTH_MULTIPLIER;	// increases number of cells per object
 	double s = pow(wx*wy*wz / num_objects, 0.3333333);
 	nx = m * wx / s + 1;
@@ -42,6 +42,7 @@ void Grid::initializeGrid()
 	BBox obj_bbox;
 	int index; // cell array index
 	double sum = 0;
+	std::vector<int> counts(num_objects,0);
 	for (Object* obj : scene->objects)
 	{
 		obj_bbox = obj->bbox;
@@ -62,11 +63,27 @@ void Grid::initializeGrid()
 					sum++;
 				}
 	}
-
-	printf("Grid bbox min: (%f, %f, %f)\n", bbox.min.x, bbox.min.y, bbox.min.z);
-	printf("Grid bbox max: (%f, %f, %f)\n", bbox.max.x, bbox.max.y, bbox.max.z);
-	printf("Grid nx:%d ny:%d nz:%d\n", nx, ny, nz);
-	printf("Grid obj/voxel %f\n", sum / num_cells);
+	for(auto& cell: cells)
+	{
+		counts[cell.size()]++;
+	}
+	printf("GRID bbox min: (%f, %f, %f)\n", bbox.min.x, bbox.min.y, bbox.min.z);
+	printf("GRID bbox max: (%f, %f, %f)\n", bbox.max.x, bbox.max.y, bbox.max.z);
+	printf("GRID nx:%d ny:%d nz:%d\n", nx, ny, nz);
+	printf("GRID total objects per cell %f\n", sum);
+	printf("GRID obj/voxel %f\n", sum / num_cells);
+	printf("num objects in how many Cells: ");
+	for (int i = 0; i < counts.size(); i++)
+	{
+		printf("%d:%d",i,counts[i]);
+		if(i == counts.size()-1)
+		{
+			printf("\n");
+		}else
+		{
+			printf(" ");
+		}
+	}
 }
 
 vec3 Grid::min_coordinates() {
@@ -112,9 +129,9 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	double oy = ray.origin.y;
 	double oz = ray.origin.z;
 
-	double dx = ray.origin.x + DBL_EPSILON;
-	double dy = ray.origin.y + DBL_EPSILON;
-	double dz = ray.origin.z + DBL_EPSILON;
+	double dx = ray.dir.x + DBL_EPSILON;
+	double dy = ray.dir.y + DBL_EPSILON;
+	double dz = ray.dir.z + DBL_EPSILON;
 
 	double tx_min, ty_min, tz_min;
 	double tx_max, ty_max, tz_max;
@@ -152,39 +169,36 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		tz_max = (bbox.min.z - oz)*c;
 	}
 
-	double t_max, t_min;
+	double t0, t1;
 
 	// find largest entering value
 
 	if (tx_min > ty_min)
-		t_max = tx_min;
+		t0 = tx_min;
 	else
-		t_max = ty_min;
+		t0 = ty_min;
 
-	if (tz_min > t_max)
-		t_max = tz_min;
+	if (tz_min > t0)
+		t0 = tz_min;
 
-	// find smalles  entering value
+	// find smalles exiting value
 
 	if (tx_max < ty_max)
-		t_min = tx_max;
+		t1 = tx_max;
 	else
-		t_min = ty_max;
+		t1 = ty_max;
 
-	if (tz_max < t_min)
-		t_min = tz_max;
+	if (tz_max < t1)
+		t1 = tz_max;
 	
-	bool intersects = t_max < t_min && t_min > EPSILON;
+	bool intersects = t0 < t1 && t1 > EPSILON;
 
-	if (!intersects)
+	if (true || !intersects)
 		return;
 
 	// voxel coordinates
 
 	int ix, iy, iz;
-	double wx = bbox.max.x - bbox.min.x;
-	double wy = bbox.max.y - bbox.min.y;
-	double wz = bbox.max.z - bbox.min.z;
 	if(bbox.inside(ray.origin))
 	{
 		ix = clamp((ox - bbox.min.x)*nx / wx, 0, nx - 1);
@@ -192,7 +206,7 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		iz = clamp((oz - bbox.min.z)*nz / wz, 0, nz - 1);
 	}else
 	{
-		vec3 p = ray.origin + t_min * ray.dir;
+		vec3 p = ray.origin + t1 * ray.dir;
 		ix = clamp((p.x - bbox.min.x)*nx / wx, 0, nx - 1);
 		iy = clamp((p.y - bbox.min.y)*ny / wy, 0, ny - 1);
 		iz = clamp((p.z - bbox.min.z)*nz / wz, 0, nz - 1);
@@ -210,9 +224,9 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	iy_step = ray.dir.y > 0 ? 1 : -1;
 	iz_step = ray.dir.z > 0 ? 1 : -1;
 	
-	tx_next = tx_min + (ix + ix_step)*dtx;
-	ty_next = ty_min + (iy + iy_step)*dty;
-	tz_next = tz_min + (iz + iz_step)*dtz;
+	tx_next = tx_min + ix*dtx;
+	ty_next = ty_min + ix*dty;
+	tz_next = tz_min + iz*dtz;
 
 	ix_stop = nx;
 	iy_stop = ny;
@@ -230,21 +244,21 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		if(tx_next < ty_next && tx_next < tz_next)
 		{
 			tx_next += dtx;
-			ix_step++;
-			if (ix_step == ix_stop)
+			ix += ix_step;
+			if (ix < 0 || ix == ix_stop)
 				return;
 		}else if(ty_next < tz_next)
 		{
 			ty_next += dty;
-			iy_step++;
-			if (iy_step == iy_stop)
+			iy += iy_step;
+			if (iy < 0 || iy == iy_stop)
 				return;
 		}
 		else
 		{
-			tz_next += dtx;
-			iz_step++;
-			if (iz_step == iz_stop)
+			tz_next += dtz;
+			iz += iz_step;
+			if (iz < 0 || iz == iz_stop)
 				return;
 		}
 	}

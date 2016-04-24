@@ -3,40 +3,51 @@
 #include <iostream>
 #include "vec.h"
 #include <algorithm>
-#include "../objects.h"
+#include "objects.h"
 
-/*							
-std::string scene_files[] = {
-"balls_low.nff",		 //0
-"balls_medium.nff",			//1
-"balls_high.nff",		//2
-"mount_low.nff",		 //3
-"mount_high.nff",		//4
-"mount_very_high.nff",	//5
-"balls_low_large.nff",	//6
-"three_balls.nff",		//7
-"three_balls_small.nff",		//8
+
+
+// TODO later
+// https://stackoverflow.com/questions/201593/is-there-a-simple-way-to-convert-c-enum-to-string/201770#201770
+enum DrawMode
+{
+	NORMAL,
+	MONTE_CARLO,
+	DOF,
+	DOF_MONTE_CARLO,
+	GRID,
 };
-*/
-
-#define SCENE_FILE 1
-
-#define MAX_DEPTH 6
-#define MAX_DIVISIONS 2
-#define MONTE_CARLO_THRESHOLD 0.3
-#define DEPTH_OF_FIELD_SAMPLES 5
-#define SOFT_SHADOWS_SAMPLES 32
-#define GRID_WIDTH_MULTIPLIER 2
-
 /*
 Draw Mode:
-	3 - full threaded
-	4 - full threaded monte carlo
-	5 - full threaded DoF
-	6 - full threaded DoF + monte carlo
-	7 - full threaded grid acceleration
+3 - full threaded
+4 - full threaded monte carlo
+5 - full threaded DoF
+6 - full threaded DoF + monte carlo
+7 - full threaded grid acceleration
 */
-#define DRAW_MODE 7
+extern DrawMode DRAW_MODE;
+
+// Ray tracing
+extern int MAX_DEPTH;
+// Monte Carlo
+extern int MAX_DIVISIONS;
+extern double MONTE_CARLO_THRESHOLD;
+// Depth of field
+extern int DEPTH_OF_FIELD_SAMPLES;
+// Soft shadows
+extern const bool SOFT_SHADOWS_ON;
+enum soft_shadow_type { AREA, SPHERE};
+extern const soft_shadow_type SOFT_SHADOW_TYPE;
+extern const int SOFT_SHADOWS_SAMPLES;
+// Area Soft Shadow
+extern const vec3 LIGHT_AREA_U;
+extern const vec3 LIGHT_AREA_V;
+extern const double LIGHT_AREA_SIDE;
+// Sphere Soft Shadow
+extern double LIGHT_RADIUS;
+//GRID acceleration
+extern int GRID_WIDTH_MULTIPLIER;
+
 
 
 class Scene;
@@ -90,8 +101,8 @@ public:
 class Light {
 public:
 	vec3 pos;
-	vec3 area_x=vec3(1,0,0);
-	vec3 area_y=vec3(0, 1, 0);
+	vec3 area_x = LIGHT_AREA_U;
+	vec3 area_y = LIGHT_AREA_V;
 	vec3 color;
 	Light(vec3 pos, vec3 color, vec3 a, vec3 b) : pos(pos), color(color), area_x(a), area_y(b) {}
 };
@@ -117,7 +128,7 @@ public:
 	std::vector<std::vector<Object*>> cells;
 	BBox bbox;
 	int nx, ny, nz; // number of cells x, y, z
-
+	double wx, wy, wz;
 	vec3 min_coordinates();
 	vec3 max_coordinates();
 	void calc_hit(Ray& ray, Hit& hit);

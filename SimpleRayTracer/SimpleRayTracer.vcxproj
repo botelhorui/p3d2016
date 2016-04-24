@@ -27,8 +27,8 @@
     <ClCompile Include="src\raytracer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="objects.h" />
     <ClInclude Include="src\lodepng.h" />
+    <ClInclude Include="src\objects.h" />
     <ClInclude Include="src\raytracer.h" />
     <ClInclude Include="src\vec.h" />
   </ItemGroup>

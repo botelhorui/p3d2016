@@ -33,6 +33,7 @@ distribution.
 #include <ctime>
 #include <algorithm>
 
+DrawMode DRAW_MODE = NORMAL;
 
 std::string scene_files[] = {
 	"balls_low.nff",		 //0
@@ -45,10 +46,40 @@ std::string scene_files[] = {
 	"three_balls.nff",		//7
 	"three_balls_small.nff",		//8
 };
+int SCENE_FILE = 0;
+std::string folder_path = "scenes/";
 std::string scene_file = scene_files[SCENE_FILE];
-std::string scene_file_path = "scenes/" + scene_file;
+std::string scene_file_path = folder_path + scene_file;
 
-// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+
+// Ray tracing
+int MAX_DEPTH = 6;
+
+// Monte Carlo
+int MAX_DIVISIONS = 2;
+double MONTE_CARLO_THRESHOLD = 0.3;
+
+// Depth of field
+int DEPTH_OF_FIELD_SAMPLES = 5;
+
+// Soft shadows
+const bool SOFT_SHADOWS_ON = false;
+const soft_shadow_type SOFT_SHADOW_TYPE = SPHERE;
+const int SOFT_SHADOWS_SAMPLES = 32;
+
+// Area Soft Shadow
+const vec3 LIGHT_AREA_U(1, 0, 0);
+const vec3 LIGHT_AREA_V(0, 1, 0);
+const double LIGHT_AREA_SIDE = 0;
+
+// Sphere Soft Shadow
+double LIGHT_RADIUS = 0.25;
+
+//GRID acceleration
+int GRID_WIDTH_MULTIPLIER = 2;
+
+
+// Get current date/time, format is YYYY-MM-DD-HH-mm-ss
 const std::string currentDateTime() {
 	time_t     now = time(0);
 	struct tm  tstruct;
@@ -57,7 +88,7 @@ const std::string currentDateTime() {
 	localtime_s(&tstruct, &now);
 	// Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
 	// for more information about date/time format
-	strftime(buf, sizeof(buf), "%Y-%m-%d_%H.%M.%S", &tstruct);
+	strftime(buf, sizeof(buf), "%Y-%m-%d-%H-%M-%S", &tstruct);
 
 	return buf;
 }
@@ -81,30 +112,30 @@ int main(int argc, char *argv[])
 	unsigned width = scene.camera.res_x, height = scene.camera.res_y;
 	unsigned char* image = (unsigned char*)malloc(width * height * 4);
 	double start = omp_get_wtime();
-//#pragma omp parallel
+#pragma omp parallel
 	{		
 		int x, yy;
-//#pragma omp master
+#pragma omp master
 		printf("num threads %d\n", omp_get_num_threads());
-//#pragma omp for schedule(dynamic)
+#pragma omp for schedule(dynamic)
 		for (yy = 0; yy < height; yy++)
 			for (x = 0; x < width; x++)
 			{
 				int y = height - yy;
 				vec3 color;
-				if (DRAW_MODE == 3 || DRAW_MODE == 7) {
+				if (DRAW_MODE == NORMAL || DRAW_MODE == GRID) {
 					Ray ray = scene.calculate_primary_ray(x, y);
 					ray.depth = MAX_DEPTH;
 					ray.ior = 1.0f;
 					color = scene.ray_trace(ray);
 				}
-				else if (DRAW_MODE == 4) {
+				else if (DRAW_MODE == MONTE_CARLO) {
 					color = scene.ray_trace_monte_carlo(x, y);
 				}
-				else if (DRAW_MODE == 5) {
+				else if (DRAW_MODE == DOF) {
 					color = scene.ray_trace_dof(x, y);
 				}
-				else if (DRAW_MODE == 6) {
+				else if (DRAW_MODE == DOF_MONTE_CARLO) {
 					color = scene.ray_trace_monte_carlo_dof(x, y);
 				}				
 				//R G B A

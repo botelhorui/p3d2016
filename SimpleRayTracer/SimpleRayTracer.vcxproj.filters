@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="lib">
+      <UniqueIdentifier>{7bd5e6c1-20b5-4063-a0bf-4b58c740b420}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\raytracer.cpp">
@@ -24,14 +27,14 @@
     <ClCompile Include="src\intersections.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\lodepng.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\main2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\grid.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lodepng.cpp">
+      <Filter>lib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -42,9 +45,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lodepng.h">
-      <Filter>Source Files</Filter>
+      <Filter>lib</Filter>
     </ClInclude>
-    <ClInclude Include="objects.h">
+    <ClInclude Include="src\objects.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

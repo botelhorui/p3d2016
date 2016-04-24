@@ -120,3 +120,7 @@ inline double max3(double x, double y, double z)
 	return max;
 }
 
+inline double random()
+{
+	return (double)rand() / RAND_MAX;
+}

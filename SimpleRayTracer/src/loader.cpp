@@ -82,9 +82,11 @@ int Scene::load_nff(std::string path){
 	printf("number of triangles %d\n", triangles.size());
 
 	// TODO
-	grid.scene = this;
-	grid.initializeGrid();
-		
+	if(DRAW_MODE == GRID)
+	{
+		grid.scene = this;
+		grid.initializeGrid();
+	}		
 	return 0;
 }
 

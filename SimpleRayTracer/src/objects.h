@@ -37,7 +37,6 @@ public:
 	virtual ~Object() {}
 	Material mat;
 	BBox bbox;
-
 	Object(Material mat) :mat(mat) {};
 	// output: hit
 	// updates hit if the ray intersects closer
