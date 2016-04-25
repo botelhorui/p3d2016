@@ -27,10 +27,10 @@ void Grid::initializeGrid()
 	wy = bbox.max.y - bbox.min.y;
 	wz = bbox.max.z - bbox.min.z;
 	double m = GRID_WIDTH_MULTIPLIER;	// increases number of cells per object
-	double s = pow(wx*wy*wz / num_objects, 0.3333333);
-	nx = m * wx / s + 1;
-	ny = m * wy / s + 1;
-	nz = m * wz / s + 1;
+	double s = pow(wx*wy*wz / num_objects, 1.0/3.0);
+	nx = trunc(m * wx / s)+1;
+	ny = trunc(m * wy / s)+1;
+	nz = trunc(m * wz / s)+1;
 
 	int num_cells = nx * ny * nz;
 
@@ -46,12 +46,12 @@ void Grid::initializeGrid()
 	for (Object* obj : scene->objects)
 	{
 		obj_bbox = obj->bbox;
-		int ixmin = clamp((obj_bbox.min.x - bbox.min.x)*nx / wx - 1, 0, nx - 1);
-		int iymin = clamp((obj_bbox.min.y - bbox.min.y)*ny / wy - 1, 0, ny - 1);
-		int izmin = clamp((obj_bbox.min.z - bbox.min.z)*nz / wz - 1, 0, nz - 1);
-		int ixmax = clamp((obj_bbox.max.x - bbox.min.x)*nx / wx + 1, 0, nx - 1);
-		int iymax = clamp((obj_bbox.max.y - bbox.min.y)*ny / wy + 1, 0, ny - 1);
-		int izmax = clamp((obj_bbox.max.z - bbox.min.z)*nz / wz + 1, 0, nz - 1);
+		int ixmin = clamp(floor((obj_bbox.min.x - bbox.min.x) / wx*nx), 0, nx - 1);
+		int iymin = clamp(floor((obj_bbox.min.y - bbox.min.y) / wy*ny), 0, ny - 1);
+		int izmin = clamp(floor((obj_bbox.min.z - bbox.min.z) / wz*nz), 0, nz - 1);
+		int ixmax = clamp(floor((obj_bbox.max.x - bbox.min.x) / wx*nx), 0, nx - 1);
+		int iymax = clamp(floor((obj_bbox.max.y - bbox.min.y) / wy*ny), 0, ny - 1);
+		int izmax = clamp(floor((obj_bbox.max.z - bbox.min.z) / wz*nz), 0, nz - 1);
 
 		// Add object to the cells
 		for (int iz = izmin; iz <= izmax; iz++)
@@ -135,9 +135,9 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	double oy = ray.origin.y;
 	double oz = ray.origin.z;
 
-	double dx = ray.dir.x + DBL_EPSILON;
-	double dy = ray.dir.y + DBL_EPSILON;
-	double dz = ray.dir.z + DBL_EPSILON;
+	double dx = ray.dir.x;
+	double dy = ray.dir.y;
+	double dz = ray.dir.z;
 
 	double tx_min, ty_min, tz_min;
 	double tx_max, ty_max, tz_max;
@@ -210,15 +210,15 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		bool intersects = t0 < t1;
 		if(!intersects)
 			return;
-		vec3 p = ray.origin + t0 * ray.dir;
-		ix = clamp((p.x - bbox.min.x)*nx / wx, 0, nx - 1);
-		iy = clamp((p.y - bbox.min.y)*ny / wy, 0, ny - 1);
-		iz = clamp((p.z - bbox.min.z)*nz / wz, 0, nz - 1);
+		vec3 p = ray.origin + t0 * ray.dir + EPSILON;
+		ix = clamp(floor((p.x - bbox.min.x)*nx / wx), 0, nx - 1);
+		iy = clamp(floor((p.y - bbox.min.y)*ny / wy), 0, ny - 1);
+		iz = clamp(floor((p.z - bbox.min.z)*nz / wz), 0, nz - 1);
 	}else
 	{
-		ix = clamp((ox - bbox.min.x)*nx / wx, 0, nx - 1);
-		iy = clamp((oy - bbox.min.y)*ny / wy, 0, ny - 1);
-		iz = clamp((oz - bbox.min.z)*nz / wz, 0, nz - 1);
+		ix = clamp(floor((ox - bbox.min.x)*nx / wx), 0, nx - 1);
+		iy = clamp(floor((oy - bbox.min.y)*ny / wy), 0, ny - 1);
+		iz = clamp(floor((oz - bbox.min.z)*nz / wz), 0, nz - 1);
 	}
 
 	double dtx = (tx_max - tx_min) / nx;
@@ -251,16 +251,16 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		}		
 		if (tx_next < ty_next && tx_next < tz_next)
 		{
-			if (hit.found && hit.dist <= tx_next)
+			if (tx_next<= hit.dist && hit.dist <= tx_next+dtx)
 				return;
-			tx_next += dtx;
+			tx_next += dtx;			
 			ix += ix_step;
 			if (ix < 0 || ix == ix_stop)
 				return;
 		}
 		else if (ty_next < tz_next)
 		{
-			if (hit.found && hit.dist <= ty_next)
+			if (ty_next <= hit.dist && hit.dist <= ty_next + dty)
 				return;
 			ty_next += dty;
 			iy += iy_step;
@@ -269,7 +269,7 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		}
 		else
 		{
-			if (hit.found && hit.dist <= tz_next)
+			if (tz_next <= hit.dist && hit.dist <= tz_next + dtz)
 				return;
 			tz_next += dtz;
 			iz += iz_step;

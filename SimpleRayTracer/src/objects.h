@@ -64,8 +64,8 @@ public:
 	double radius;
 	Sphere(vec3 pos, double radius, Material mat) : Object(mat), center(pos), radius(radius)
 	{
-		bbox.min = center - vec3(radius+EPSILON);
-		bbox.max = center + vec3(radius+EPSILON);
+		bbox.min = center - radius - EPSILON;
+		bbox.max = center + radius + EPSILON;
 	}
 	void calcIntersection(const Ray& ray, Hit& hit) override;
 	virtual bool isBounded() { return true; }

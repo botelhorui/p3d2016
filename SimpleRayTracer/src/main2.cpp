@@ -33,7 +33,7 @@ distribution.
 #include <ctime>
 #include <algorithm>
 
-DrawMode DRAW_MODE = NORMAL;
+DrawMode DRAW_MODE = GRID;
 
 std::string scene_files[] = {
 	"balls_low.nff",		 //0
