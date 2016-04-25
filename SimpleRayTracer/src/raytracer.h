@@ -65,7 +65,13 @@ public:
 		return (dist == -1 || newDist < dist);
 	}
 
-	void updateMinHit(vec3& newPos, vec3& newNormal, bool newIntoInside, Material & newMat, double& newDist) {
+	void updateMinHit(
+		vec3& newPos,
+		vec3& newNormal,
+		bool newIntoInside,
+		Material & newMat,
+		double& newDist)
+	{
 		if (newDist > 0 && (!found || newDist < dist))
 		{
 			pos = newPos;

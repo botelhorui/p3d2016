@@ -33,7 +33,7 @@ distribution.
 #include <ctime>
 #include <algorithm>
 
-DrawMode DRAW_MODE = GRID;
+DrawMode DRAW_MODE = NORMAL;
 
 std::string scene_files[] = {
 	"balls_low.nff",		 //0
@@ -46,14 +46,14 @@ std::string scene_files[] = {
 	"three_balls.nff",		//7
 	"three_balls_small.nff",		//8
 };
-int SCENE_FILE = 6;
+int SCENE_FILE = 0;
 std::string folder_path = "scenes/";
 std::string scene_file = scene_files[SCENE_FILE];
 std::string scene_file_path = folder_path + scene_file;
 
 
 // Ray tracing
-int MAX_DEPTH = 1;
+int MAX_DEPTH = 6;
 
 // Monte Carlo
 int MAX_DIVISIONS = 2;
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 			{
 				if(i == 277 && j == 205)
 				{
-					printf("");
+					//printf("");
 				}
 				int y = height - j;
 				int x = i;

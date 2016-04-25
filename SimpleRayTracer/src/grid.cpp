@@ -46,12 +46,12 @@ void Grid::initializeGrid()
 	for (Object* obj : scene->objects)
 	{
 		obj_bbox = obj->bbox;
-		int ixmin = clamp((obj_bbox.min.x - bbox.min.x)*nx / wx, 0, nx - 1);
-		int iymin = clamp((obj_bbox.min.y - bbox.min.y)*ny / wy, 0, ny - 1);
-		int izmin = clamp((obj_bbox.min.z - bbox.min.z)*nz / wz, 0, nz - 1);
-		int ixmax = clamp((obj_bbox.max.x - bbox.min.x)*nx / wx, 0, nx - 1);
-		int iymax = clamp((obj_bbox.max.y - bbox.min.y)*ny / wy, 0, ny - 1);
-		int izmax = clamp((obj_bbox.max.z - bbox.min.z)*nz / wz, 0, nz - 1);
+		int ixmin = clamp((obj_bbox.min.x - bbox.min.x)*nx / wx - 1, 0, nx - 1);
+		int iymin = clamp((obj_bbox.min.y - bbox.min.y)*ny / wy - 1, 0, ny - 1);
+		int izmin = clamp((obj_bbox.min.z - bbox.min.z)*nz / wz - 1, 0, nz - 1);
+		int ixmax = clamp((obj_bbox.max.x - bbox.min.x)*nx / wx + 1, 0, nx - 1);
+		int iymax = clamp((obj_bbox.max.y - bbox.min.y)*ny / wy + 1, 0, ny - 1);
+		int izmax = clamp((obj_bbox.max.z - bbox.min.z)*nz / wz + 1, 0, nz - 1);
 
 		// Add object to the cells
 		for (int iz = izmin; iz <= izmax; iz++)
