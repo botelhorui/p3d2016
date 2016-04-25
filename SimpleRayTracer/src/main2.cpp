@@ -78,7 +78,7 @@ double LIGHT_RADIUS = 0.25;
 //GRID acceleration
 int GRID_WIDTH_MULTIPLIER = 2;
 
-long INTERSECTION_TESTS_COUNT=0;
+double INTERSECTION_TESTS_COUNT=0;
 
 // Get current date/time, format is YYYY-MM-DD-HH-mm-ss
 const std::string currentDateTime() {
@@ -122,9 +122,9 @@ int main(int argc, char *argv[])
 		for (j = 0; j < height; j++)
 			for (i = 0; i < width; i++)
 			{
-				if(i == 210 && j == 400)
+				if(i == 277 && j == 205)
 				{
-					printf("break");
+					printf("");
 				}
 				int y = height - j;
 				int x = i;
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 	if (error) printf("error %u: %s\n", error, lodepng_error_text(error));
 
 	printf("Total time:%f\n", end);
-	printf("Total intersection tests: %d\n", INTERSECTION_TESTS_COUNT);
+	printf("Total intersection tests: %f\n", INTERSECTION_TESTS_COUNT);
 
 	scene.free();
 	free(image);

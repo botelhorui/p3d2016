@@ -78,7 +78,10 @@ void Grid::initializeGrid()
 	printf("GRID num_objects:how_many_cells:\n");
 	for (int i = 0; i < counts.size(); i++)
 	{
-		printf("%d:%d", i, counts[i]);
+		if(counts[i]>0)
+		{
+			printf("%d:%d", i, counts[i]);			
+		}
 		if (i == counts.size() - 1)
 		{
 			printf("\n");
@@ -205,7 +208,7 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 
 	if (!bbox.inside(ray.origin)) {
 		bool intersects = t0 < t1;
-		if (!intersects)
+		if(!intersects)
 			return;
 		vec3 p = ray.origin + t0 * ray.dir;
 		ix = clamp((p.x - bbox.min.x)*nx / wx, 0, nx - 1);
@@ -226,9 +229,9 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	int ix_step, iy_step, iz_step;
 	int ix_stop, iy_stop, iz_stop;
 
-	ix_step = ray.dir.x > 0 ? 1 : -1;
-	iy_step = ray.dir.y > 0 ? 1 : -1;
-	iz_step = ray.dir.z > 0 ? 1 : -1;
+	ix_step = dx > 0 ? 1 : -1;
+	iy_step = dy > 0 ? 1 : -1;
+	iz_step = dz > 0 ? 1 : -1;
 
 	tx_next = tx_min + ix*dtx;
 	ty_next = ty_min + iy*dty;
@@ -241,14 +244,15 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	while (true)
 	{
 		std::vector<Object*>& objects = cells[ix + iy*nx + nx*ny*iz];
+		hit.found = false;
 		for (Object* obj : objects)
 		{
 			obj->calcIntersection(ray, hit);
-		}
-		if (hit.found)
-			return;
+		}		
 		if (tx_next < ty_next && tx_next < tz_next)
 		{
+			if (hit.found && hit.dist <= tx_next)
+				return;
 			tx_next += dtx;
 			ix += ix_step;
 			if (ix < 0 || ix == ix_stop)
@@ -256,6 +260,8 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		}
 		else if (ty_next < tz_next)
 		{
+			if (hit.found && hit.dist <= ty_next)
+				return;
 			ty_next += dty;
 			iy += iy_step;
 			if (iy < 0 || iy == iy_stop)
@@ -263,6 +269,8 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		}
 		else
 		{
+			if (hit.found && hit.dist <= tz_next)
+				return;
 			tz_next += dtz;
 			iz += iz_step;
 			if (iz < 0 || iz == iz_stop)

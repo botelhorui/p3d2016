@@ -47,7 +47,7 @@ extern const double LIGHT_AREA_SIDE;
 extern double LIGHT_RADIUS;
 //GRID acceleration
 extern int GRID_WIDTH_MULTIPLIER;
-extern long INTERSECTION_TESTS_COUNT;
+extern double INTERSECTION_TESTS_COUNT;
 
 
 class Scene;
