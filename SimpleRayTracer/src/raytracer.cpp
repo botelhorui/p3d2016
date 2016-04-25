@@ -64,6 +64,8 @@ Ray Scene::calculate_primary_ray(int x, int y)
 		(h * ((1.0 * y) / camera.res_y - .5)) * ye +
 		(-df) * ze;
 	r.dir = normalize(r.dir);
+	r.depth = MAX_DEPTH;
+	r.ior = 1.0f;
 	return r;
 }
 
@@ -610,7 +612,7 @@ vec3 Scene::calc_local_color(Ray& ray, Hit& hit){
 		vec3 c(0, 0, 0);
 		// calculate area light shadow using random rays
 		double num_samples = SOFT_SHADOWS_ON ? SOFT_SHADOWS_SAMPLES : 1;
-		for (int si = 0; si < SOFT_SHADOWS_SAMPLES; si++)
+		for (int si = 0; si < num_samples; si++)
 		{
 			Hit shadow_hit;
 			vec3 light_vec = light.pos - hit.pos;
@@ -643,13 +645,17 @@ vec3 Scene::calc_local_color(Ray& ray, Hit& hit){
 			c += diffuseColor + specularcolor;
 		}
 
-		localColor += (1.0/ SOFT_SHADOWS_SAMPLES)*c;
+		localColor += (1.0/ num_samples)*c;
 	}
 	
 	return localColor;
 }
 
-
+vec3 Scene::ray_trace(int x, int y)
+{
+	Ray ray = calculate_primary_ray(x, y);
+	return ray_trace(ray);
+}
 vec3 Scene::ray_trace(Ray ray)
 {
 	if (ray.depth == 0)
@@ -673,3 +679,4 @@ vec3 Scene::ray_trace(Ray ray)
 	//return local_color + reflectance * reflect_color + transmitance * refract_color;
 
 }
+

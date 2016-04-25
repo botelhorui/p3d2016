@@ -47,7 +47,7 @@ extern const double LIGHT_AREA_SIDE;
 extern double LIGHT_RADIUS;
 //GRID acceleration
 extern int GRID_WIDTH_MULTIPLIER;
-
+extern long INTERSECTION_TESTS_COUNT;
 
 
 class Scene;
@@ -147,12 +147,12 @@ public:
 
 	int load_nff(std::string path);
 	Ray calculate_primary_ray(int x, int y);
-
+	// Colors
 	vec3 calc_reflect_color(Ray ray, Hit& hit);
 	vec3 calc_local_color(Ray& ray, Hit& hit);
-	vec3 calc_refract_color(Ray ray, Hit& hit);
-	void calc_intersection(Ray& ray, Hit& hit);
-	vec3 ray_trace(Ray ray);
+	vec3 calc_refract_color(Ray ray, Hit& hit);	
+	
+	vec3 ray_trace(int x, int y);
 	vec3 ray_trace_dof(double x, double y);
 	vec3 ray_trace_monte_carlo(int x, int y);
 	vec3 ray_trace_monte_carlo_dof(int x, int y);
@@ -160,6 +160,8 @@ public:
 	void Scene::calc_shadow_ray(Hit& hit, Light& light_pos, Ray& ray_out);
 	void free();
 private:
+	void calc_intersection(Ray& ray, Hit& hit);
+	vec3 ray_trace(Ray ray);
 	Ray calculate_primary_ray_monte_carlo(double x, double y, double deltaX, double deltaY);
 	vec3 calculatePrimaryRaysMonteCarlo(int divisions, double x, double y);
 	vec3 calculateSecondaryRaysMonteCarlo(int divisions, double x, double y, vec3 colorPixelsPrevious[4][4], int index);

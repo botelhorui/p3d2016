@@ -2,7 +2,7 @@
 #include <istream>
 #include <cassert>
 
-#define EPSILON (double)1e-4
+#define EPSILON (double)1e-6
 class vec3
 {
 	double calcLength(double x, double y, double z) const

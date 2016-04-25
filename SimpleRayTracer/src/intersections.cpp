@@ -18,6 +18,7 @@ void Scene::calc_intersection(Ray& ray, Hit& hit) {
 			obj->calcIntersection(ray, hit);
 		}
 	}
+	// Planes are unbounded so they are processed separatedly from spheres, triangles
 	for (Plane* pl : planes)
 	{
 		pl->calcIntersection(ray, hit);
@@ -25,6 +26,7 @@ void Scene::calc_intersection(Ray& ray, Hit& hit) {
 }
 void Plane::calcIntersection(const Ray& ray, Hit& hit)
 {
+	INTERSECTION_TESTS_COUNT++;
 	double denom = dot(normal, ray.dir);
 	double dist = -1;
 	if (abs(denom) > 0)
@@ -46,6 +48,7 @@ void Plane::calcIntersection(const Ray& ray, Hit& hit)
 
 void Sphere::calcIntersection(const Ray& ray, Hit& hit)
 {
+	INTERSECTION_TESTS_COUNT++;
 	double dist = -1;
 	vec3 rayToCenter = (center - ray.origin);
 	double squareLength = rayToCenter.length * rayToCenter.length;
@@ -95,6 +98,7 @@ void Sphere::calcIntersection(const Ray& ray, Hit& hit)
 
 void Triangle::calcIntersection(const Ray& ray, Hit& hit)
 {
+	INTERSECTION_TESTS_COUNT++;
 	double dist = -1;
 	double NO = dot(ray.origin, this->normal);
 	double ND = dot(ray.dir, this->normal);

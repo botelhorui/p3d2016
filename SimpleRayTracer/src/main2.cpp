@@ -33,7 +33,7 @@ distribution.
 #include <ctime>
 #include <algorithm>
 
-DrawMode DRAW_MODE = NORMAL;
+DrawMode DRAW_MODE = GRID;
 
 std::string scene_files[] = {
 	"balls_low.nff",		 //0
@@ -42,18 +42,18 @@ std::string scene_files[] = {
 	"mount_low.nff",		 //3
 	"mount_high.nff",		//4
 	"mount_very_high.nff",	//5
-	"balls_low_large.nff",	//6
+	"one_ball.nff",	//6
 	"three_balls.nff",		//7
 	"three_balls_small.nff",		//8
 };
-int SCENE_FILE = 0;
+int SCENE_FILE = 6;
 std::string folder_path = "scenes/";
 std::string scene_file = scene_files[SCENE_FILE];
 std::string scene_file_path = folder_path + scene_file;
 
 
 // Ray tracing
-int MAX_DEPTH = 6;
+int MAX_DEPTH = 1;
 
 // Monte Carlo
 int MAX_DIVISIONS = 2;
@@ -78,6 +78,7 @@ double LIGHT_RADIUS = 0.25;
 //GRID acceleration
 int GRID_WIDTH_MULTIPLIER = 2;
 
+long INTERSECTION_TESTS_COUNT=0;
 
 // Get current date/time, format is YYYY-MM-DD-HH-mm-ss
 const std::string currentDateTime() {
@@ -112,22 +113,24 @@ int main(int argc, char *argv[])
 	unsigned width = scene.camera.res_x, height = scene.camera.res_y;
 	unsigned char* image = (unsigned char*)malloc(width * height * 4);
 	double start = omp_get_wtime();
-#pragma omp parallel
+//#pragma omp parallel
 	{		
-		int x, yy;
-#pragma omp master
+		int i, j;
+//#pragma omp master
 		printf("num threads %d\n", omp_get_num_threads());
-#pragma omp for schedule(dynamic)
-		for (yy = 0; yy < height; yy++)
-			for (x = 0; x < width; x++)
+//#pragma omp for schedule(dynamic)
+		for (j = 0; j < height; j++)
+			for (i = 0; i < width; i++)
 			{
-				int y = height - yy;
+				if(i == 210 && j == 400)
+				{
+					printf("break");
+				}
+				int y = height - j;
+				int x = i;
 				vec3 color;
 				if (DRAW_MODE == NORMAL || DRAW_MODE == GRID) {
-					Ray ray = scene.calculate_primary_ray(x, y);
-					ray.depth = MAX_DEPTH;
-					ray.ior = 1.0f;
-					color = scene.ray_trace(ray);
+					color = scene.ray_trace(x,y);
 				}
 				else if (DRAW_MODE == MONTE_CARLO) {
 					color = scene.ray_trace_monte_carlo(x, y);
@@ -139,12 +142,12 @@ int main(int argc, char *argv[])
 					color = scene.ray_trace_monte_carlo_dof(x, y);
 				}				
 				//R G B A
-				int i = 4 * width * yy + 4 * x;
+				int k = 4 * width * j + 4 * x;
 				
-				image[i + 0] = std::min(1.0, color.x) * 255; 
-				image[i + 1] = std::min(1.0, color.y) * 255;
-				image[i + 2] = std::min(1.0, color.z) * 255;
-				image[i + 3] = 255;
+				image[k + 0] = std::min(1.0, color.x) * 255; 
+				image[k + 1] = std::min(1.0, color.y) * 255;
+				image[k + 2] = std::min(1.0, color.z) * 255;
+				image[k + 3] = 255;
 			}	
 	}
 	double end = omp_get_wtime() - start;
@@ -156,7 +159,8 @@ int main(int argc, char *argv[])
 	/*if there's an error, display it*/
 	if (error) printf("error %u: %s\n", error, lodepng_error_text(error));
 
-	printf("Terminou! em %f\n", end);
+	printf("Total time:%f\n", end);
+	printf("Total intersection tests: %d\n", INTERSECTION_TESTS_COUNT);
 
 	scene.free();
 	free(image);

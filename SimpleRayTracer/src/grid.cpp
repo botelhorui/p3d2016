@@ -42,7 +42,7 @@ void Grid::initializeGrid()
 	BBox obj_bbox;
 	int index; // cell array index
 	double sum = 0;
-	std::vector<int> counts(num_objects,0);
+
 	for (Object* obj : scene->objects)
 	{
 		obj_bbox = obj->bbox;
@@ -63,23 +63,27 @@ void Grid::initializeGrid()
 					sum++;
 				}
 	}
-	for(auto& cell: cells)
+	// count how many cells for a give num of objects (array's index)
+	std::vector<int> counts(num_objects + 1, 0);
+	for (auto& cell : cells)
 	{
 		counts[cell.size()]++;
 	}
 	printf("GRID bbox min: (%f, %f, %f)\n", bbox.min.x, bbox.min.y, bbox.min.z);
 	printf("GRID bbox max: (%f, %f, %f)\n", bbox.max.x, bbox.max.y, bbox.max.z);
 	printf("GRID nx:%d ny:%d nz:%d\n", nx, ny, nz);
-	printf("GRID total objects per cell %f\n", sum);
+	printf("GRID num cells:%d\n", num_cells);
+	printf("GRID num objects in all cells %f\n", sum);
 	printf("GRID obj/voxel %f\n", sum / num_cells);
-	printf("num objects in how many Cells: ");
+	printf("GRID num_objects:how_many_cells:\n");
 	for (int i = 0; i < counts.size(); i++)
 	{
-		printf("%d:%d",i,counts[i]);
-		if(i == counts.size()-1)
+		printf("%d:%d", i, counts[i]);
+		if (i == counts.size() - 1)
 		{
 			printf("\n");
-		}else
+		}
+		else
 		{
 			printf(" ");
 		}
@@ -124,7 +128,6 @@ vec3 Grid::max_coordinates() {
 
 void Grid::calc_hit(Ray& ray, Hit& hit)
 {
-	// calculate if ray hits the grid bbox (kay ,kajya)
 	double ox = ray.origin.x;
 	double oy = ray.origin.y;
 	double oz = ray.origin.z;
@@ -136,40 +139,49 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	double tx_min, ty_min, tz_min;
 	double tx_max, ty_max, tz_max;
 
+	int ix, iy, iz;
+	double t0, t1;
+
+
+	// calculate if ray hits the grid bbox (kay ,kajya)
+	
+	// x direction
 	double a = 1.0 / dx;
-	if( a >= 0)
+	if (a >= 0)
 	{
 		tx_min = (bbox.min.x - ox)*a;
 		tx_max = (bbox.max.x - ox)*a;
-	}else
+	}
+	else
 	{
 		tx_min = (bbox.max.x - ox)*a;
 		tx_max = (bbox.min.x - ox)*a;
 	}
 
+	// y direction
 	double b = 1.0 / dy;
-	if( b >= 0)
+	if (b >= 0)
 	{
 		ty_min = (bbox.min.y - oy)*b;
 		ty_max = (bbox.max.y - oy)*b;
-	}else
+	}
+	else
 	{
 		ty_min = (bbox.max.y - oy)*b;
 		ty_max = (bbox.min.y - oy)*b;
 	}
 
 	double c = 1.0 / dz;
-	if(b >= 0)
+	if (c >= 0)
 	{
 		tz_min = (bbox.min.z - oz)*c;
 		tz_max = (bbox.max.z - oz)*c;
-	}else
+	}
+	else
 	{
 		tz_min = (bbox.max.z - oz)*c;
 		tz_max = (bbox.min.z - oz)*c;
 	}
-
-	double t0, t1;
 
 	// find largest entering value
 
@@ -190,32 +202,26 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 
 	if (tz_max < t1)
 		t1 = tz_max;
-	
-	bool intersects = t0 < t1 && t1 > EPSILON;
 
-	if (true || !intersects)
-		return;
-
-	// voxel coordinates
-
-	int ix, iy, iz;
-	if(bbox.inside(ray.origin))
+	if (!bbox.inside(ray.origin)) {
+		bool intersects = t0 < t1;
+		if (!intersects)
+			return;
+		vec3 p = ray.origin + t0 * ray.dir;
+		ix = clamp((p.x - bbox.min.x)*nx / wx, 0, nx - 1);
+		iy = clamp((p.y - bbox.min.y)*ny / wy, 0, ny - 1);
+		iz = clamp((p.z - bbox.min.z)*nz / wz, 0, nz - 1);
+	}else
 	{
 		ix = clamp((ox - bbox.min.x)*nx / wx, 0, nx - 1);
 		iy = clamp((oy - bbox.min.y)*ny / wy, 0, ny - 1);
 		iz = clamp((oz - bbox.min.z)*nz / wz, 0, nz - 1);
-	}else
-	{
-		vec3 p = ray.origin + t1 * ray.dir;
-		ix = clamp((p.x - bbox.min.x)*nx / wx, 0, nx - 1);
-		iy = clamp((p.y - bbox.min.y)*ny / wy, 0, ny - 1);
-		iz = clamp((p.z - bbox.min.z)*nz / wz, 0, nz - 1);
 	}
 
 	double dtx = (tx_max - tx_min) / nx;
 	double dty = (ty_max - ty_min) / ny;
 	double dtz = (tz_max - tz_min) / nz;
-	
+
 	double tx_next, ty_next, tz_next;
 	int ix_step, iy_step, iz_step;
 	int ix_stop, iy_stop, iz_stop;
@@ -223,16 +229,16 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	ix_step = ray.dir.x > 0 ? 1 : -1;
 	iy_step = ray.dir.y > 0 ? 1 : -1;
 	iz_step = ray.dir.z > 0 ? 1 : -1;
-	
+
 	tx_next = tx_min + ix*dtx;
-	ty_next = ty_min + ix*dty;
+	ty_next = ty_min + iy*dty;
 	tz_next = tz_min + iz*dtz;
 
 	ix_stop = nx;
 	iy_stop = ny;
 	iz_stop = nz;
 
-	while(true)
+	while (true)
 	{
 		std::vector<Object*>& objects = cells[ix + iy*nx + nx*ny*iz];
 		for (Object* obj : objects)
@@ -241,13 +247,14 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		}
 		if (hit.found)
 			return;
-		if(tx_next < ty_next && tx_next < tz_next)
+		if (tx_next < ty_next && tx_next < tz_next)
 		{
 			tx_next += dtx;
 			ix += ix_step;
 			if (ix < 0 || ix == ix_stop)
 				return;
-		}else if(ty_next < tz_next)
+		}
+		else if (ty_next < tz_next)
 		{
 			ty_next += dty;
 			iy += iy_step;
