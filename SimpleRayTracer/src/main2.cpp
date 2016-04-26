@@ -36,7 +36,7 @@ distribution.
 // Enable disable options
 //#define THREADS_ON
 DrawMode DRAW_MODE = NORMAL;
-bool GRID_ON = false;
+bool GRID_ON = true;
 const bool SOFT_SHADOWS_ON = false;
 
 std::string scene_files[] = {
@@ -52,7 +52,7 @@ std::string scene_files[] = {
 	"montecarlo.nff", // 9
 	"triangles.nff"
 };
-int SCENE_FILE = 0;
+int SCENE_FILE = 2;
 std::string folder_path = "scenes/";
 std::string scene_file = scene_files[SCENE_FILE];
 std::string scene_file_path = folder_path + scene_file;
@@ -69,7 +69,6 @@ double MONTE_CARLO_THRESHOLD = 0.3;
 int DEPTH_OF_FIELD_SAMPLES = 5;
 
 // Soft shadows
-const bool SOFT_SHADOWS_ON = false;
 const soft_shadow_type SOFT_SHADOW_TYPE = SPHERE;
 const int SOFT_SHADOWS_SAMPLES = 32;
 
