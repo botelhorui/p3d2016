@@ -307,8 +307,8 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 
 		for (Object* obj : objects)
 		{
-			//obj->calcIntersection(ray, hit);
-
+			obj->calcIntersection(ray, hit);
+/** /
 			if (ray.id != obj->rayId) {
 				if (obj->calcIntersection(ray, hit)) {
 					obj->rayId = ray.id;
@@ -321,7 +321,7 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 			}
 			else {
 				if (lastX) {
-					if (obj->distanceForId > dtLastX && obj->distanceForId < dtLastX + dtx) {
+					if (obj->distanceForId >= dtLastX && obj->distanceForId <= dtLastX + dtx) {
 						if (obj->distanceForId < minDistId) {
 							hit.dist = obj->distanceForId;
 							hit.found = true;
@@ -330,7 +330,7 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 				}
 
 				if (lastY) {
-					if (obj->distanceForId > dtLastY && obj->distanceForId < dtLastY + dty) {
+					if (obj->distanceForId >= dtLastY && obj->distanceForId <= dtLastY + dty) {
 						if (obj->distanceForId < minDistId) {
 							hit.dist = obj->distanceForId;
 							hit.found = true;
@@ -339,7 +339,7 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 				}
 
 				if (lastZ) {
-					if (obj->distanceForId > dtLastZ && obj->distanceForId < dtLastZ + dtz) {
+					if (obj->distanceForId >= dtLastZ && obj->distanceForId <= dtLastZ + dtz) {
 						if (obj->distanceForId < minDistId) {
 							hit.dist = obj->distanceForId;
 							hit.found = true;
@@ -347,7 +347,7 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 					}
 				}
 			}
-
+/**/
 		}
 
 		lastX = lastY = lastZ = false;

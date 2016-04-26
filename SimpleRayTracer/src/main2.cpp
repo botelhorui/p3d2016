@@ -40,19 +40,18 @@ bool GRID_ON = true;
 const bool SOFT_SHADOWS_ON = false;
 
 std::string scene_files[] = {
-	"balls_low.nff",		 //0
+	"balls_low.nff",			//0
 	"balls_medium.nff",			//1
-	"balls_high.nff",		//2
-	"mount_low.nff",		 //3
-	"mount_high.nff",		//4
-	"mount_very_high.nff",	//5
-	"one_ball.nff",	//6
-	"three_balls.nff",		//7
-	"three_balls_small.nff",		//8
-	"montecarlo.nff", // 9
-	"triangles.nff"
+	"balls_high.nff",			//2
+	"mount_low.nff",			//3
+	"mount_high.nff",			//4
+	"mount_very_high.nff",		//5
+	"one_ball.nff",				//6
+	"three_balls.nff",			//7
+	"three_balls_small.nff",	//8
+	"triangles.nff"				//9
 };
-int SCENE_FILE = 2;
+int SCENE_FILE = 0;
 std::string folder_path = "scenes/";
 std::string scene_file = scene_files[SCENE_FILE];
 std::string scene_file_path = folder_path + scene_file;
@@ -71,9 +70,6 @@ int DEPTH_OF_FIELD_SAMPLES = 5;
 // Soft shadows
 const soft_shadow_type SOFT_SHADOW_TYPE = SPHERE;
 const int SOFT_SHADOWS_SAMPLES = 32;
-
-//const soft_shadow_type SOFT_SHADOW_TYPE = AREA;
-//const int SOFT_SHADOWS_SAMPLES = 64;
 
 // Area Soft Shadow
 const vec3 LIGHT_AREA_U(1, 0, 0);
