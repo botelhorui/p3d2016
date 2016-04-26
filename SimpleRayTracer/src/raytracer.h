@@ -86,16 +86,18 @@ public:
 
 class Ray {
 public:
+	int id;
 	vec3 origin;
 	vec3 dir;
 	int depth;
 	double ior;
 
 	Ray() {
+		id = (int)(random() * (float)INT_MAX);
 	}
 
 	Ray(vec3& origin, vec3 dir, int depth, double ior) : origin(origin), dir(dir), depth(depth), ior(ior) {
-
+		id = (int)(random() * (float)INT_MAX);
 	}
 
 	void offset(double x) {

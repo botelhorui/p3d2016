@@ -24,7 +24,7 @@ void Scene::calc_intersection(Ray& ray, Hit& hit) {
 		pl->calcIntersection(ray, hit);
 	}
 }
-void Plane::calcIntersection(const Ray& ray, Hit& hit)
+bool Plane::calcIntersection(const Ray& ray, Hit& hit)
 {
 	INTERSECTION_TESTS_COUNT++;
 	double denom = dot(normal, ray.dir);
@@ -43,10 +43,14 @@ void Plane::calcIntersection(const Ray& ray, Hit& hit)
 			hitNormal = normal;
 		}
 		hit.updateMinHit(pos, hitNormal, false, mat, dist);
+
+		return true;
 	}
+
+	return false;
 }
 
-void Sphere::calcIntersection(const Ray& ray, Hit& hit)
+bool Sphere::calcIntersection(const Ray& ray, Hit& hit)
 {
 	INTERSECTION_TESTS_COUNT++;
 	double dist = -1;
@@ -57,17 +61,17 @@ void Sphere::calcIntersection(const Ray& ray, Hit& hit)
 	bool hitNormalSignPositive;
 	if (squareLength == squareRadius)
 	{
-		return; // ray origin on the surface of the sphere
+		return false; // ray origin on the surface of the sphere
 	}
 	double B = dot(rayToCenter, ray.dir);
 	if (squareLength > squareRadius && B < 0)
 	{
-		return; // ray outside sphere but looking back since cos is negative
+		return false; // ray outside sphere but looking back since cos is negative
 	}
 	double R = B * B - squareLength + squareRadius;
 	if (R < 0)
 	{
-		return; // does not intersect
+		return false; // does not intersect
 	}
 	if (squareLength > squareRadius)
 	{
@@ -94,9 +98,11 @@ void Sphere::calcIntersection(const Ray& ray, Hit& hit)
 		into_inside = false;
 	}
 	hit.updateMinHit(hitPos, hitNormal, into_inside, mat, dist);
+
+	return true;
 }
 
-void Triangle::calcIntersection(const Ray& ray, Hit& hit)
+bool Triangle::calcIntersection(const Ray& ray, Hit& hit)
 {
 	INTERSECTION_TESTS_COUNT++;
 	double dist = -1;
@@ -104,16 +110,16 @@ void Triangle::calcIntersection(const Ray& ray, Hit& hit)
 	double ND = dot(ray.dir, this->normal);
 	if (ND == 0)
 	{ // ray parallel to triangle
-		return;
+		return false;
 	}
 	dist = (-d - NO) / ND;
 	if (dist < 0.0f)
 	{ // triangle behind ray
-		return;
+		return false;
 	}
 	if (!hit.isCloser(dist))
 	{ // a closed intersection has already been found
-		return;
+		return false;
 	}
 	vec3 P = ray.origin + dist * ray.dir;
 	int i0, i1, i2; // index of the vectors of the projection of the triangle on a primary plane
@@ -156,7 +162,7 @@ void Triangle::calcIntersection(const Ray& ray, Hit& hit)
 		}
 		else
 		{
-			return;
+			return false;
 		}
 	}
 	else
@@ -168,13 +174,16 @@ void Triangle::calcIntersection(const Ray& ray, Hit& hit)
 		}
 		else
 		{
-			return;
+			return false;
 		}
 	}
 	if (alpha >= 0 && beta >= 0 && (alpha + beta) <= 1)
 	{
 		hit.updateMinHit(P, normal, false, mat, dist);	
+		return true;
 	}
+
+	return false;
 }
 
 
