@@ -77,17 +77,18 @@ void Grid::initializeGrid()
 	printf("GRID num objects in all cells %f\n", sum);
 	printf("GRID obj/voxel %f\n", sum / num_cells);
 	printf("GRID num_objects:how_many_cells:\n");
+	/*
 	for (int i = 0; i < counts.size(); i++)
 	{
 		if(counts[i]>0)
 		{
-			printf("%d:%d ", i, counts[i]);			
+			//printf("%d:%d ", i, counts[i]);			
 		}
 		if (i == counts.size() - 1)
 		{
 			printf("\n");
 		}
-	}
+	}*/
 }
 
 vec3 Grid::min_coordinates() {

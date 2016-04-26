@@ -34,7 +34,7 @@ distribution.
 #include <algorithm>
 
 // Enable disable options
-#define THREADS_ON
+//#define THREADS_ON
 DrawMode DRAW_MODE = NORMAL;
 bool GRID_ON = false;
 const bool SOFT_SHADOWS_ON = false;
@@ -52,7 +52,7 @@ std::string scene_files[] = {
 	"montecarlo.nff", // 9
 	"triangles.nff"
 };
-int SCENE_FILE = 4;
+int SCENE_FILE = 0;
 std::string folder_path = "scenes/";
 std::string scene_file = scene_files[SCENE_FILE];
 std::string scene_file_path = folder_path + scene_file;
@@ -135,13 +135,14 @@ int main(int argc, char *argv[])
 		for (j = 0; j < height; j++)
 			for (i = 0; i < width; i++)
 			{
+				/*
 				if(i == 256 && j == 256)
 				{
 					//printf("");
 				}
 				else {
 					//continue;
-				}
+				}*/
 				int y = height - j;
 				int x = i;
 				vec3 color;
@@ -176,7 +177,7 @@ int main(int argc, char *argv[])
 	if (error) printf("error %u: %s\n", error, lodepng_error_text(error));
 
 	printf("Total time:%f\n", end);
-	printf("Total intersection tests: %f\n", INTERSECTION_TESTS_COUNT);
+	printf("Total intersection tests: %f.0\n", INTERSECTION_TESTS_COUNT);
 
 	scene.free();
 	free(image);
