@@ -46,7 +46,7 @@ std::string scene_files[] = {
 	"three_balls.nff",		//7
 	"three_balls_small.nff",		//8
 };
-int SCENE_FILE = 0;
+int SCENE_FILE = 7;
 std::string folder_path = "scenes/";
 std::string scene_file = scene_files[SCENE_FILE];
 std::string scene_file_path = folder_path + scene_file;
@@ -63,7 +63,7 @@ double MONTE_CARLO_THRESHOLD = 0.3;
 int DEPTH_OF_FIELD_SAMPLES = 5;
 
 // Soft shadows
-const bool SOFT_SHADOWS_ON = false;
+const bool SOFT_SHADOWS_ON = true;
 const soft_shadow_type SOFT_SHADOW_TYPE = SPHERE;
 const int SOFT_SHADOWS_SAMPLES = 32;
 

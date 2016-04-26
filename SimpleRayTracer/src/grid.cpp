@@ -26,11 +26,12 @@ void Grid::initializeGrid()
 	wx = bbox.max.x - bbox.min.x;
 	wy = bbox.max.y - bbox.min.y;
 	wz = bbox.max.z - bbox.min.z;
+
 	double m = GRID_WIDTH_MULTIPLIER;	// increases number of cells per object
 	double s = pow(wx*wy*wz / num_objects, 1.0/3.0);
-	nx = trunc(m * wx / s)+1;
-	ny = trunc(m * wy / s)+1;
-	nz = trunc(m * wz / s)+1;
+	nx = (m * wx / s)+1;
+	ny = (m * wy / s)+1;
+	nz = (m * wz / s)+1;
 
 	int num_cells = nx * ny * nz;
 
@@ -46,12 +47,12 @@ void Grid::initializeGrid()
 	for (Object* obj : scene->objects)
 	{
 		obj_bbox = obj->bbox;
-		int ixmin = clamp(floor((obj_bbox.min.x - bbox.min.x) / wx*nx), 0, nx - 1);
-		int iymin = clamp(floor((obj_bbox.min.y - bbox.min.y) / wy*ny), 0, ny - 1);
-		int izmin = clamp(floor((obj_bbox.min.z - bbox.min.z) / wz*nz), 0, nz - 1);
-		int ixmax = clamp(floor((obj_bbox.max.x - bbox.min.x) / wx*nx), 0, nx - 1);
-		int iymax = clamp(floor((obj_bbox.max.y - bbox.min.y) / wy*ny), 0, ny - 1);
-		int izmax = clamp(floor((obj_bbox.max.z - bbox.min.z) / wz*nz), 0, nz - 1);
+		int ixmin = clamp(((obj_bbox.min.x - bbox.min.x) / wx*nx)-1, 0, nx - 1);
+		int iymin = clamp(((obj_bbox.min.y - bbox.min.y) / wy*ny)-1, 0, ny - 1);
+		int izmin = clamp(((obj_bbox.min.z - bbox.min.z) / wz*nz)-1, 0, nz - 1);
+		int ixmax = clamp(((obj_bbox.max.x - bbox.min.x) / wx*nx)+1, 0, nx - 1);
+		int iymax = clamp(((obj_bbox.max.y - bbox.min.y) / wy*ny)+1, 0, ny - 1);
+		int izmax = clamp(((obj_bbox.max.z - bbox.min.z) / wz*nz)+1, 0, nz - 1);
 
 		// Add object to the cells
 		for (int iz = izmin; iz <= izmax; iz++)
@@ -107,7 +108,7 @@ vec3 Grid::min_coordinates() {
 		if (bbox.min.z < min.z)
 			min.z = bbox.min.z;
 	}
-	min = min - EPSILON;
+	min = min - 1;
 	return min;
 }
 
@@ -125,7 +126,7 @@ vec3 Grid::max_coordinates() {
 		if (bbox.max.z > max.z)
 			max.z = bbox.max.z;
 	}
-	max = max + EPSILON;
+	max = max + 1;
 	return max;
 }
 
@@ -205,12 +206,14 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 
 	if (tz_max < t1)
 		t1 = tz_max;
+	t0 += 0.1;
+	t1 -= 0.1;
 
 	if (!bbox.inside(ray.origin)) {
 		bool intersects = t0 < t1;
 		if(!intersects)
 			return;
-		vec3 p = ray.origin + t0 * ray.dir + EPSILON;
+		vec3 p = ray.origin + t0 * ray.dir;
 		ix = clamp(floor((p.x - bbox.min.x)*nx / wx), 0, nx - 1);
 		iy = clamp(floor((p.y - bbox.min.y)*ny / wy), 0, ny - 1);
 		iz = clamp(floor((p.z - bbox.min.z)*nz / wz), 0, nz - 1);
@@ -220,7 +223,7 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		iy = clamp(floor((oy - bbox.min.y)*ny / wy), 0, ny - 1);
 		iz = clamp(floor((oz - bbox.min.z)*nz / wz), 0, nz - 1);
 	}
-
+	
 	double dtx = (tx_max - tx_min) / nx;
 	double dty = (ty_max - ty_min) / ny;
 	double dtz = (tz_max - tz_min) / nz;
@@ -229,6 +232,61 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	int ix_step, iy_step, iz_step;
 	int ix_stop, iy_stop, iz_stop;
 
+
+	if (dx > 0) {
+		tx_next = tx_min + (ix + 1) * dtx;
+		ix_step = +1;
+		ix_stop = nx;
+	}
+	else {
+		tx_next = tx_min + (nx - ix) * dtx;
+		ix_step = -1;
+		ix_stop = -1;
+	}
+
+	if (dx == 0.0) {
+		tx_next = DBL_MAX;
+		ix_step = -1;
+		ix_stop = -1;
+	}
+
+
+	if (dy > 0) {
+		ty_next = ty_min + (iy + 1) * dty;
+		iy_step = +1;
+		iy_stop = ny;
+	}
+	else {
+		ty_next = ty_min + (ny - iy) * dty;
+		iy_step = -1;
+		iy_stop = -1;
+	}
+
+	if (dy == 0.0) {
+		ty_next = DBL_MAX;
+		iy_step = -1;
+		iy_stop = -1;
+	}
+
+	if (dz > 0) {
+		tz_next = tz_min + (iz + 1) * dtz;
+		iz_step = +1;
+		iz_stop = nz;
+	}
+	else {
+		tz_next = tz_min + (nz - iz) * dtz;
+		iz_step = -1;
+		iz_stop = -1;
+	}
+
+	if (dz == 0.0) {
+		tz_next = DBL_MAX;
+		iz_step = -1;
+		iz_stop = -1;
+	}
+
+	
+	/*
 	ix_step = dx > 0 ? 1 : -1;
 	iy_step = dy > 0 ? 1 : -1;
 	iz_step = dz > 0 ? 1 : -1;
@@ -240,7 +298,7 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	ix_stop = nx;
 	iy_stop = ny;
 	iz_stop = nz;
-
+	*/
 	while (true)
 	{
 		std::vector<Object*>& objects = cells[ix + iy*nx + nx*ny*iz];
@@ -251,29 +309,29 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		}		
 		if (tx_next < ty_next && tx_next < tz_next)
 		{
-			if (tx_next<= hit.dist && hit.dist <= tx_next+dtx)
+			if (hit.found && hit.dist <= tx_next)
 				return;
 			tx_next += dtx;			
 			ix += ix_step;
-			if (ix < 0 || ix == ix_stop)
+			if (ix == ix_stop)
 				return;
 		}
 		else if (ty_next < tz_next)
 		{
-			if (ty_next <= hit.dist && hit.dist <= ty_next + dty)
+			if (hit.found && hit.dist <= ty_next)
 				return;
 			ty_next += dty;
 			iy += iy_step;
-			if (iy < 0 || iy == iy_stop)
+			if (iy == iy_stop)
 				return;
 		}
 		else
 		{
-			if (tz_next <= hit.dist && hit.dist <= tz_next + dtz)
+			if (hit.found && hit.dist <= tz_next)
 				return;
 			tz_next += dtz;
 			iz += iz_step;
-			if (iz < 0 || iz == iz_stop)
+			if (iz == iz_stop)
 				return;
 		}
 	}

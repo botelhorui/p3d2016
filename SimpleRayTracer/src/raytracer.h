@@ -49,7 +49,6 @@ extern double LIGHT_RADIUS;
 extern int GRID_WIDTH_MULTIPLIER;
 extern double INTERSECTION_TESTS_COUNT;
 
-
 class Scene;
 
 class Hit {
