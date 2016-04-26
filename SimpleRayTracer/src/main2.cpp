@@ -34,9 +34,9 @@ distribution.
 #include <algorithm>
 
 // Enable disable options
-//#define THREADS_ON
+#define THREADS_ON
 DrawMode DRAW_MODE = NORMAL;
-bool GRID_ON = true;
+bool GRID_ON = false;
 const bool SOFT_SHADOWS_ON = false;
 
 std::string scene_files[] = {
@@ -52,7 +52,7 @@ std::string scene_files[] = {
 	"montecarlo.nff", // 9
 	"triangles.nff"
 };
-int SCENE_FILE = 1;
+int SCENE_FILE = 4;
 std::string folder_path = "scenes/";
 std::string scene_file = scene_files[SCENE_FILE];
 std::string scene_file_path = folder_path + scene_file;
@@ -135,9 +135,12 @@ int main(int argc, char *argv[])
 		for (j = 0; j < height; j++)
 			for (i = 0; i < width; i++)
 			{
-				if(i == 277 && j == 205)
+				if(i == 256 && j == 256)
 				{
 					//printf("");
+				}
+				else {
+					//continue;
 				}
 				int y = height - j;
 				int x = i;

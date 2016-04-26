@@ -81,21 +81,17 @@ void Grid::initializeGrid()
 	{
 		if(counts[i]>0)
 		{
-			printf("%d:%d", i, counts[i]);			
+			printf("%d:%d ", i, counts[i]);			
 		}
 		if (i == counts.size() - 1)
 		{
 			printf("\n");
 		}
-		else
-		{
-			printf(" ");
-		}
 	}
 }
 
 vec3 Grid::min_coordinates() {
-	vec3 min(FLT_MAX, FLT_MAX, FLT_MAX);
+	vec3 min(DBL_MAX, DBL_MAX, DBL_MAX);
 	BBox bbox;
 	for (Object*& obj : scene->objects)
 	{
@@ -113,7 +109,7 @@ vec3 Grid::min_coordinates() {
 }
 
 vec3 Grid::max_coordinates() {
-	vec3 max(FLT_MIN, FLT_MIN, FLT_MIN);
+	vec3 max(DBL_MIN, DBL_MIN, DBL_MIN);
 	BBox bbox;
 	for (Object*& obj : scene->objects)
 	{
@@ -300,7 +296,7 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	while (true)
 	{
 		std::vector<Object*>& objects = cells[ix + iy*nx + nx*ny*iz];
-		hit.found = false;
+		//hit.found = false;
 		for (Object* obj : objects)
 		{
 			obj->calcIntersection(ray, hit);

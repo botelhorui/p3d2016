@@ -24,6 +24,7 @@ void Scene::calc_intersection(Ray& ray, Hit& hit) {
 		pl->calcIntersection(ray, hit);
 	}
 }
+
 void Plane::calcIntersection(const Ray& ray, Hit& hit)
 {
 	inc_intersection_count();
