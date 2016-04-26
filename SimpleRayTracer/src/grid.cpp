@@ -47,12 +47,12 @@ void Grid::initializeGrid()
 	for (Object* obj : scene->objects)
 	{
 		obj_bbox = obj->bbox;
-		int ixmin = clamp(((obj_bbox.min.x - bbox.min.x) / wx*nx)-1, 0, nx - 1);
-		int iymin = clamp(((obj_bbox.min.y - bbox.min.y) / wy*ny)-1, 0, ny - 1);
-		int izmin = clamp(((obj_bbox.min.z - bbox.min.z) / wz*nz)-1, 0, nz - 1);
-		int ixmax = clamp(((obj_bbox.max.x - bbox.min.x) / wx*nx)+1, 0, nx - 1);
-		int iymax = clamp(((obj_bbox.max.y - bbox.min.y) / wy*ny)+1, 0, ny - 1);
-		int izmax = clamp(((obj_bbox.max.z - bbox.min.z) / wz*nz)+1, 0, nz - 1);
+		int ixmin = clamp(((obj_bbox.min.x - bbox.min.x) / wx*nx), 0, nx - 1);
+		int iymin = clamp(((obj_bbox.min.y - bbox.min.y) / wy*ny), 0, ny - 1);
+		int izmin = clamp(((obj_bbox.min.z - bbox.min.z) / wz*nz), 0, nz - 1);
+		int ixmax = clamp(((obj_bbox.max.x - bbox.min.x) / wx*nx), 0, nx - 1);
+		int iymax = clamp(((obj_bbox.max.y - bbox.min.y) / wy*ny), 0, ny - 1);
+		int izmax = clamp(((obj_bbox.max.z - bbox.min.z) / wz*nz), 0, nz - 1);
 
 		// Add object to the cells
 		for (int iz = izmin; iz <= izmax; iz++)
@@ -108,7 +108,7 @@ vec3 Grid::min_coordinates() {
 		if (bbox.min.z < min.z)
 			min.z = bbox.min.z;
 	}
-	min = min - 1;
+	min = min - EPSILON;
 	return min;
 }
 
@@ -126,7 +126,7 @@ vec3 Grid::max_coordinates() {
 		if (bbox.max.z > max.z)
 			max.z = bbox.max.z;
 	}
-	max = max + 1;
+	max = max + EPSILON;
 	return max;
 }
 
@@ -206,8 +206,6 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 
 	if (tz_max < t1)
 		t1 = tz_max;
-	t0 += 0.1;
-	t1 -= 0.1;
 
 	if (!bbox.inside(ray.origin)) {
 		bool intersects = t0 < t1;

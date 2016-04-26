@@ -5,7 +5,7 @@ at 0 0 0
 up 0 0 1
 focal 4
 view 1
-apperture 1
+apperture 0.5
 angle 45
 hither 0.1
 resolution 512 512

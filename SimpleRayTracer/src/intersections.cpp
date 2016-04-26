@@ -9,7 +9,7 @@ Output: hit
 sets hit's fields to closest intersection
 */
 void Scene::calc_intersection(Ray& ray, Hit& hit) {
-	if (DRAW_MODE == GRID)
+	if (GRID_ON)
 	{
 		grid.calc_hit(ray, hit);
 	}else{
@@ -26,7 +26,7 @@ void Scene::calc_intersection(Ray& ray, Hit& hit) {
 }
 void Plane::calcIntersection(const Ray& ray, Hit& hit)
 {
-	INTERSECTION_TESTS_COUNT++;
+	inc_intersection_count();
 	double denom = dot(normal, ray.dir);
 	double dist = -1;
 	if (abs(denom) > 0)
@@ -48,7 +48,7 @@ void Plane::calcIntersection(const Ray& ray, Hit& hit)
 
 void Sphere::calcIntersection(const Ray& ray, Hit& hit)
 {
-	INTERSECTION_TESTS_COUNT++;
+	inc_intersection_count();
 	double dist = -1;
 	vec3 rayToCenter = (center - ray.origin);
 	double squareLength = rayToCenter.length * rayToCenter.length;
@@ -98,7 +98,7 @@ void Sphere::calcIntersection(const Ray& ray, Hit& hit)
 
 void Triangle::calcIntersection(const Ray& ray, Hit& hit)
 {
-	INTERSECTION_TESTS_COUNT++;
+	inc_intersection_count();
 	double dist = -1;
 	double NO = dot(ray.origin, this->normal);
 	double ND = dot(ray.dir, this->normal);

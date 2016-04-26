@@ -33,7 +33,11 @@ distribution.
 #include <ctime>
 #include <algorithm>
 
-DrawMode DRAW_MODE = GRID;
+// Enable disable options
+//#define THREADS_ON
+DrawMode DRAW_MODE = NORMAL;
+bool GRID_ON = true;
+const bool SOFT_SHADOWS_ON = false;
 
 std::string scene_files[] = {
 	"balls_low.nff",		 //0
@@ -45,8 +49,10 @@ std::string scene_files[] = {
 	"one_ball.nff",	//6
 	"three_balls.nff",		//7
 	"three_balls_small.nff",		//8
+	"montecarlo.nff", // 9
+	"triangles.nff"
 };
-int SCENE_FILE = 7;
+int SCENE_FILE = 1;
 std::string folder_path = "scenes/";
 std::string scene_file = scene_files[SCENE_FILE];
 std::string scene_file_path = folder_path + scene_file;
@@ -63,22 +69,23 @@ double MONTE_CARLO_THRESHOLD = 0.3;
 int DEPTH_OF_FIELD_SAMPLES = 5;
 
 // Soft shadows
-const bool SOFT_SHADOWS_ON = true;
-const soft_shadow_type SOFT_SHADOW_TYPE = SPHERE;
-const int SOFT_SHADOWS_SAMPLES = 32;
+
+const soft_shadow_type SOFT_SHADOW_TYPE = AREA;
+const int SOFT_SHADOWS_SAMPLES = 64;
 
 // Area Soft Shadow
 const vec3 LIGHT_AREA_U(1, 0, 0);
 const vec3 LIGHT_AREA_V(0, 1, 0);
-const double LIGHT_AREA_SIDE = 0;
+const double LIGHT_AREA_SIDE = 1;
 
 // Sphere Soft Shadow
-double LIGHT_RADIUS = 0.25;
+double LIGHT_RADIUS = 0.5;
 
 //GRID acceleration
 int GRID_WIDTH_MULTIPLIER = 2;
 
 double INTERSECTION_TESTS_COUNT=0;
+
 
 // Get current date/time, format is YYYY-MM-DD-HH-mm-ss
 const std::string currentDateTime() {
@@ -113,12 +120,18 @@ int main(int argc, char *argv[])
 	unsigned width = scene.camera.res_x, height = scene.camera.res_y;
 	unsigned char* image = (unsigned char*)malloc(width * height * 4);
 	double start = omp_get_wtime();
-//#pragma omp parallel
+#ifdef THREADS_ON
+#pragma omp parallel
+#endif
 	{		
 		int i, j;
-//#pragma omp master
+#ifdef THREADS_ON
+#pragma omp master
+#endif
 		printf("num threads %d\n", omp_get_num_threads());
-//#pragma omp for schedule(dynamic)
+#ifdef THREADS_ON
+#pragma omp for schedule(dynamic)
+#endif
 		for (j = 0; j < height; j++)
 			for (i = 0; i < width; i++)
 			{
@@ -129,7 +142,7 @@ int main(int argc, char *argv[])
 				int y = height - j;
 				int x = i;
 				vec3 color;
-				if (DRAW_MODE == NORMAL || DRAW_MODE == GRID) {
+				if (DRAW_MODE == NORMAL) {
 					color = scene.ray_trace(x,y);
 				}
 				else if (DRAW_MODE == MONTE_CARLO) {
