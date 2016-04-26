@@ -37,10 +37,12 @@ public:
 	virtual ~Object() {}
 	Material mat;
 	BBox bbox;
+	int rayId = -1;
+	double distanceForId = INT_MAX;
 	Object(Material mat) :mat(mat) {};
 	// output: hit
 	// updates hit if the ray intersects closer
-	virtual void calcIntersection(const Ray& ray, Hit& hit) = 0;
+	virtual bool calcIntersection(const Ray& ray, Hit& hit) = 0;
 	virtual bool isBounded() = 0;
 };
 
@@ -54,7 +56,7 @@ public:
 		normal = normalize(cross(v1 - v0, v2 - v0));
 		offset = -dot(v0, normal);
 	}
-	void calcIntersection(const Ray& ray, Hit& hit) override;
+	bool calcIntersection(const Ray& ray, Hit& hit) override;
 	virtual bool isBounded() { return false; }
 };
 
@@ -67,7 +69,7 @@ public:
 		bbox.min = center - radius - EPSILON;
 		bbox.max = center + radius + EPSILON;
 	}
-	void calcIntersection(const Ray& ray, Hit& hit) override;
+	bool calcIntersection(const Ray& ray, Hit& hit) override;
 	virtual bool isBounded() { return true; }
 };
 
@@ -94,6 +96,6 @@ public:
 		bbox.max = vec3(maxx, maxy, maxz)+EPSILON;
 	}
 
-	void calcIntersection(const Ray& ray, Hit& hit) override;
+	bool calcIntersection(const Ray& ray, Hit& hit) override;
 	virtual bool isBounded() { return true; }
 };

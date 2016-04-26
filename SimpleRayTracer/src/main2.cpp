@@ -69,9 +69,12 @@ double MONTE_CARLO_THRESHOLD = 0.3;
 int DEPTH_OF_FIELD_SAMPLES = 5;
 
 // Soft shadows
+const bool SOFT_SHADOWS_ON = false;
+const soft_shadow_type SOFT_SHADOW_TYPE = SPHERE;
+const int SOFT_SHADOWS_SAMPLES = 32;
 
-const soft_shadow_type SOFT_SHADOW_TYPE = AREA;
-const int SOFT_SHADOWS_SAMPLES = 64;
+//const soft_shadow_type SOFT_SHADOW_TYPE = AREA;
+//const int SOFT_SHADOWS_SAMPLES = 64;
 
 // Area Soft Shadow
 const vec3 LIGHT_AREA_U(1, 0, 0);

@@ -294,18 +294,71 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	iy_stop = ny;
 	iz_stop = nz;
 	*/
+	double dtLastX, dtLastY, dtLastZ;
+	bool lastX, lastY, lastZ;
+	double minDistId;
+
 	while (true)
 	{
 		std::vector<Object*>& objects = cells[ix + iy*nx + nx*ny*iz];
+
+		minDistId = DBL_MAX;
 		//hit.found = false;
+
 		for (Object* obj : objects)
 		{
-			obj->calcIntersection(ray, hit);
-		}		
+			//obj->calcIntersection(ray, hit);
+
+			if (ray.id != obj->rayId) {
+				if (obj->calcIntersection(ray, hit)) {
+					obj->rayId = ray.id;
+					obj->distanceForId = hit.dist;
+
+					if (hit.dist < minDistId) {
+						minDistId = hit.dist;
+					}
+				}
+			}
+			else {
+				if (lastX) {
+					if (obj->distanceForId > dtLastX && obj->distanceForId < dtLastX + dtx) {
+						if (obj->distanceForId < minDistId) {
+							hit.dist = obj->distanceForId;
+							hit.found = true;
+						}
+					}
+				}
+
+				if (lastY) {
+					if (obj->distanceForId > dtLastY && obj->distanceForId < dtLastY + dty) {
+						if (obj->distanceForId < minDistId) {
+							hit.dist = obj->distanceForId;
+							hit.found = true;
+						}
+					}
+				}
+
+				if (lastZ) {
+					if (obj->distanceForId > dtLastZ && obj->distanceForId < dtLastZ + dtz) {
+						if (obj->distanceForId < minDistId) {
+							hit.dist = obj->distanceForId;
+							hit.found = true;
+						}
+					}
+				}
+			}
+
+		}
+
+		lastX = lastY = lastZ = false;
+
 		if (tx_next < ty_next && tx_next < tz_next)
 		{
 			if (hit.found && hit.dist <= tx_next)
 				return;
+
+			dtLastX = tx_next;
+			lastX = true;
 			tx_next += dtx;			
 			ix += ix_step;
 			if (ix == ix_stop)
@@ -315,6 +368,9 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		{
 			if (hit.found && hit.dist <= ty_next)
 				return;
+
+			dtLastY = ty_next;
+			lastY = true;
 			ty_next += dty;
 			iy += iy_step;
 			if (iy == iy_stop)
@@ -324,6 +380,9 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 		{
 			if (hit.found && hit.dist <= tz_next)
 				return;
+
+			dtLastZ = tz_next;
+			lastZ = true;
 			tz_next += dtz;
 			iz += iz_step;
 			if (iz == iz_stop)
