@@ -15,7 +15,6 @@ enum DrawMode
 	MONTE_CARLO,
 	DOF,
 	DOF_MONTE_CARLO,
-	GRID,
 };
 /*
 Draw Mode:
@@ -26,6 +25,7 @@ Draw Mode:
 7 - full threaded grid acceleration
 */
 extern DrawMode DRAW_MODE;
+extern bool GRID_ON;
 
 // Ray tracing
 extern int MAX_DEPTH;
@@ -48,7 +48,15 @@ extern double LIGHT_RADIUS;
 //GRID acceleration
 extern int GRID_WIDTH_MULTIPLIER;
 extern double INTERSECTION_TESTS_COUNT;
-
+inline void inc_intersection_count()
+{
+#ifdef THREADS_ON
+#pragma omp critical
+	INTERSECTION_TESTS_COUNT++;
+#else
+	INTERSECTION_TESTS_COUNT++;
+#endif	
+}
 class Scene;
 
 class Hit {

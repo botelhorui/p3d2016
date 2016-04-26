@@ -77,25 +77,22 @@ void Grid::initializeGrid()
 	printf("GRID num objects in all cells %f\n", sum);
 	printf("GRID obj/voxel %f\n", sum / num_cells);
 	printf("GRID num_objects:how_many_cells:\n");
+	/*
 	for (int i = 0; i < counts.size(); i++)
 	{
 		if(counts[i]>0)
 		{
-			printf("%d:%d", i, counts[i]);			
+			//printf("%d:%d ", i, counts[i]);			
 		}
 		if (i == counts.size() - 1)
 		{
 			printf("\n");
 		}
-		else
-		{
-			printf(" ");
-		}
-	}
+	}*/
 }
 
 vec3 Grid::min_coordinates() {
-	vec3 min(FLT_MAX, FLT_MAX, FLT_MAX);
+	vec3 min(DBL_MAX, DBL_MAX, DBL_MAX);
 	BBox bbox;
 	for (Object*& obj : scene->objects)
 	{
@@ -108,12 +105,12 @@ vec3 Grid::min_coordinates() {
 		if (bbox.min.z < min.z)
 			min.z = bbox.min.z;
 	}
-	min = min - 1;
+	min = min - EPSILON;
 	return min;
 }
 
 vec3 Grid::max_coordinates() {
-	vec3 max(FLT_MIN, FLT_MIN, FLT_MIN);
+	vec3 max(DBL_MIN, DBL_MIN, DBL_MIN);
 	BBox bbox;
 	for (Object*& obj : scene->objects)
 	{
@@ -126,7 +123,7 @@ vec3 Grid::max_coordinates() {
 		if (bbox.max.z > max.z)
 			max.z = bbox.max.z;
 	}
-	max = max + 1;
+	max = max + EPSILON;
 	return max;
 }
 
@@ -206,8 +203,6 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 
 	if (tz_max < t1)
 		t1 = tz_max;
-	t0 += 0.1;
-	t1 -= 0.1;
 
 	if (!bbox.inside(ray.origin)) {
 		bool intersects = t0 < t1;
@@ -306,8 +301,9 @@ void Grid::calc_hit(Ray& ray, Hit& hit)
 	while (true)
 	{
 		std::vector<Object*>& objects = cells[ix + iy*nx + nx*ny*iz];
-		hit.found = false;
+
 		minDistId = DBL_MAX;
+		//hit.found = false;
 
 		for (Object* obj : objects)
 		{
